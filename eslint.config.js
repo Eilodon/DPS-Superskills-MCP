@@ -76,6 +76,23 @@ export default tseslint.config(
     },
   },
 
+  // KMS HTTP providers rely on global fetch/Response to call GCP/Vault REST APIs
+  // without a dependency. eslint-plugin-n flags them as "experimental" until Node 21
+  // (Node's own ExperimentalWarning label), but both are functionally stable on this
+  // project's actual floor (Node 20, see .github/workflows/ci.yml) — bumping the
+  // configured version instead would be inaccurate to the real deployment target.
+  {
+    files: [
+      "src/storage/providers/gcp_kms_key_registry.ts",
+      "src/storage/providers/vault_key_registry.ts",
+      "src/__tests__/gcp_kms_key_registry.test.ts",
+      "src/__tests__/vault_key_registry.test.ts",
+    ],
+    rules: {
+      "n/no-unsupported-features/node-builtins": "off",
+    },
+  },
+
   // Files dùng `any` vì lý do kiến trúc hợp lệ:
   // - SDK internals chưa được type đầy đủ (MCP alpha)
   // - Worker IPC protocol (opaque message boundary)
