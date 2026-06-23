@@ -7,6 +7,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { SKILL_MAP } from "./skill_registry.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -43,6 +45,7 @@ export interface ParsedSkill {
   announce: string;       // from **Announce:** line
   checklist: string[];    // numbered/bulleted steps from ## Checklist section
   outputTemplate: string; // content of ## Output section
+  commands: string[];     // fenced bash/sh blocks extracted from the skill body
   gotchas: GotchaEntry[]; // parsed Gotcha entries
   nanoContent: string;    // full content of <skill>.nano.md
   fullContent: string;    // full raw SKILL.md content
@@ -58,7 +61,7 @@ export interface GotchaEntry {
 // Markdown parsers
 // ---------------------------------------------------------------------------
 
-function parseFrontmatter(content: string): Record<string, string> {
+export function parseFrontmatter(content: string): Record<string, string> {
   const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
   if (!match) return {};
   const result: Record<string, string> = {};
@@ -72,7 +75,7 @@ function parseFrontmatter(content: string): Record<string, string> {
   return result;
 }
 
-function extractInlineField(content: string, fieldName: string): string {
+export function extractInlineField(content: string, fieldName: string): string {
   // Handles:
   //   **Register: DISCIPLINE** — trailing text
   //   **Goal:** text here
@@ -90,41 +93,86 @@ function extractInlineField(content: string, fieldName: string): string {
   return m2[1].trim().replace(/^"|"$/g, "").replace(/\.$/, "");
 }
 
-function extractSection(content: string, heading: string): string {
-  // Match ## heading (case-insensitive, allow trailing words)
-  const pattern = new RegExp(
-    `##\\s+${escapeRegex(heading)}[^\\n]*\\n([\\s\\S]*?)(?=\\n##\\s|$)`,
-    "i"
-  );
-  const m = content.match(pattern);
-  return m ? m[1].trim() : "";
+export function extractSection(content: string, heading: string): string {
+  // Line-scanning (not single-regex) so that headings inside fenced code blocks
+  // (e.g. a literal "## Task Summary" inside a ```markdown template) never get
+  // mistaken for the real heading that starts or ends the section.
+  const lines = content.split("\n");
+  const headingRe = new RegExp(`^##\\s+${escapeRegex(heading)}\\b`, "i");
+  const anyHeadingRe = /^##\s+/;
+
+  let startIdx = -1;
+  let inFence = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*```/.test(line)) { inFence = !inFence; continue; }
+    if (!inFence && headingRe.test(line)) { startIdx = i; break; }
+  }
+  if (startIdx === -1) return "";
+
+  inFence = false;
+  let endIdx = lines.length;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*```/.test(line)) { inFence = !inFence; continue; }
+    if (!inFence && anyHeadingRe.test(line)) { endIdx = i; break; }
+  }
+
+  return lines.slice(startIdx + 1, endIdx).join("\n").trim();
 }
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function extractChecklist(content: string): string[] {
+export function extractChecklist(content: string): string[] {
   let section = extractSection(content, "Checklist");
   if (!section) section = extractSection(content, "Verification Checklist");
   if (!section) section = extractSection(content, "Steps");
   if (!section) section = extractSection(content, "Instructions");
 
-  if (!section) {
-    // Some skills list steps inline without a standard heading
-    return [];
-  }
-  const items: string[] = [];
-  for (const line of section.split("\n")) {
-    const stripped = line.replace(/^[-*\d.]+\.?\s+/, "").trim();
-    if (stripped && !stripped.startsWith("#") && !stripped.startsWith("```")) {
-      items.push(stripped);
+  if (section) {
+    const items: string[] = [];
+    for (const rawLine of section.split("\n")) {
+      const trimmed = rawLine.trim();
+      // Skip bare horizontal-rule dividers ("---", "***") — not real items.
+      if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) continue;
+      // Strip a leading bullet ("- ", "* ") or number marker ("1.", "7b.", "12)").
+      let stripped = trimmed.replace(/^(?:[-*]|\d+[a-z]?[.)])\s+/i, "");
+      // Strip a GFM task-list checkbox, whether or not it followed a bullet
+      // (some skills write "[ ] Item" directly inside a fenced ```text block).
+      stripped = stripped.replace(/^\[[ xX]\]\s*/, "");
+      if (stripped && !stripped.startsWith("#") && !stripped.startsWith("```")) {
+        items.push(stripped);
+      }
     }
+    if (items.length > 0) return items;
   }
-  return items;
+
+  // Most skills don't use a named "Checklist" section — they lay out the
+  // workflow as a sequence of "## Step N: <title>" headings instead. Fall
+  // back to collecting those headings (in document order) as the checklist.
+  // eslint-disable-next-line security/detect-unsafe-regex -- bounded to a single line (no `\n` in `.`), applied to trusted local skill files only
+  const stepHeadings = [...content.matchAll(/^##\s+(Step\s+\d+(?:\.\d+)?[a-z]?.*)$/gim)];
+  if (stepHeadings.length > 0) {
+    return stepHeadings.map(m => m[1].trim());
+  }
+
+  return [];
 }
 
-function extractGotchas(content: string): GotchaEntry[] {
+export function extractCommands(content: string): string[] {
+  const commands: string[] = [];
+  const fenceRe = /```(bash|sh)\n([\s\S]*?)```/g;
+  let m: RegExpExecArray | null;
+  while ((m = fenceRe.exec(content)) !== null) {
+    const code = m[2].trim();
+    if (code) commands.push(code);
+  }
+  return commands;
+}
+
+export function extractGotchas(content: string): GotchaEntry[] {
   const section = extractSection(content, "Gotchas");
   if (!section) return [];
 
@@ -160,9 +208,10 @@ function extractGotchas(content: string): GotchaEntry[] {
   return entries.filter(e => e.status === "ACTIVE" && e.claim);
 }
 
-function extractOutput(content: string): string {
-  // Try ## Output, ## Output Template, ## Evidence Summary
-  for (const heading of ["Output", "Output Template", "Evidence Summary"]) {
+export function extractOutput(content: string): string {
+  // Try the handful of heading spellings skills actually use for "what to
+  // produce when this skill is done".
+  for (const heading of ["Output", "Output Template", "Evidence Summary", "Execution Handoff"]) {
     const section = extractSection(content, heading);
     if (section) return section;
   }
@@ -203,13 +252,16 @@ export class SkillLoader {
     return {
       name: frontmatter.name ?? skillName,
       description: frontmatter.description ?? "",
-    register: (() => {
-      const raw = extractInlineField(fullContent, "Register");
-      // raw may look like: "DISCIPLINE** — runs before..." or "TECHNIQUE"
-      const cleaned = raw.replace(/\*\*/g, "").trim();
-      // Take only the first word (the actual register value)
-      return cleaned.split(/[\s—\-]/)[0] ?? cleaned;
-    })(),
+      register: (() => {
+        const raw = extractInlineField(fullContent, "Register");
+        // raw may look like: "DISCIPLINE** — runs before..." or "TECHNIQUE"
+        const cleaned = raw.replace(/\*\*/g, "").trim();
+        // Take only the first word (the actual register value)
+        const parsed = cleaned.split(/[\s—-]/)[0] ?? cleaned;
+        // ~45% of skills never declare an inline Register line at all — fall
+        // back to the curated registry rather than surfacing an empty value.
+        return parsed || SKILL_MAP.get(skillName)?.register || "";
+      })(),
       goal: extractInlineField(fullContent, "Goal"),
       constraints: extractInlineField(fullContent, "Constraints")
         .split(/[.;]/)
@@ -218,6 +270,7 @@ export class SkillLoader {
       announce: extractInlineField(fullContent, "Announce"),
       checklist: extractChecklist(fullContent),
       outputTemplate: extractOutput(fullContent),
+      commands: extractCommands(fullContent),
       gotchas: extractGotchas(fullContent),
       nanoContent,
       fullContent,

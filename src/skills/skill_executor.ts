@@ -69,6 +69,19 @@ export function formatSkillResponse(skill: ParsedSkill, args: SkillArgs): string
     });
   }
 
+  // ── Commands ────────────────────────────────────────────────────────────
+  if (skill.commands.length > 0) {
+    sections.push(
+      `\nCOMMANDS (${skill.commands.length} extracted bash/sh block(s) — review before running, some are conditional or destructive):`,
+    );
+    skill.commands.forEach((cmd, i) => {
+      sections.push(
+        `  --- [${i + 1}] ---`,
+        cmd.split("\n").map(l => `  ${l}`).join("\n"),
+      );
+    });
+  }
+
   // ── Output Template ─────────────────────────────────────────────────────
   if (skill.outputTemplate) {
     sections.push(
