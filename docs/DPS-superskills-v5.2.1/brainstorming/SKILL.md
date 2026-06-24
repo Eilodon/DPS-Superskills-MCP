@@ -34,7 +34,7 @@ If CONTEXT.md is missing and this is a new project or unfamiliar domain → reco
 5. **Present design** — in sections, get approval after each section
 6. **Write design doc** — save + commit
 7. **Spec self-review** — fix placeholders, contradictions, ambiguity inline
-7b. **DPS SYSTEM INTENT check** — if project has DPS or spec will be promoted to DPS (see Step 7b below)
+7b. **DPS SYSTEM INTENT check** — C3+ only, or if project has DPS / spec will be promoted to DPS (see Step 7b below)
 8. **User reviews written spec** — wait for explicit approval
 9. **Set SPEC_APPROVED** — triggers audit-design
 
@@ -82,9 +82,10 @@ docs/superskills/specs/YYYY-MM-DD-<topic>-design.md
 
 Fix inline. Ask user to review.
 
-## Step 7b: DPS SYSTEM INTENT self-check
+## Step 7b: DPS SYSTEM INTENT self-check (C3+ or DPS projects)
 
-If project has DPS initialized OR spec will be promoted to DPS:
+Skip this step for C0-C2 tasks unless the project already uses DPS structure.
+If complexity-gate rated C3+, OR project has DPS initialized, OR spec will be promoted to DPS:
 Verify spec có answers cho tất cả SYSTEM INTENT fields:
 
 ```

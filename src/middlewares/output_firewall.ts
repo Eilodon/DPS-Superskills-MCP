@@ -37,6 +37,17 @@ const PROMPT_INJECTION_MARKERS: RegExp[] = [
   /do not tell (the )?user/gi,
 ];
 
+const UNVERIFIED_COMPLETION_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
+  {
+    label: "UNVERIFIED_COMPLETION",
+    pattern: /\b(?:task|feature|fix|implementation|work)\s+(?:is\s+)?(?:complete|done|finished|ready|shipped)\b(?!.*\b(?:evidence|verified|test(?:s|ed|ing)|Fix Anchor|proof mode|T[12])\b)/gi,
+  },
+  {
+    label: "HEDGE_LANGUAGE",
+    pattern: /\b(?:should work|probably (?:works?|fine|correct)|seems to (?:work|be|pass)|i(?:'m| am) confident)\b/gi,
+  },
+];
+
 interface StructuredRedactionState {
   nodes: number;
   totalStringBytes: number;
@@ -120,6 +131,17 @@ function redactStrictPii(text: string, violations: Set<string>): string {
   return redacted;
 }
 
+function flagUnverifiedClaims(text: string, violations: Set<string>): string {
+  let flagged = text;
+  for (const { label, pattern } of UNVERIFIED_COMPLETION_PATTERNS) {
+    flagged = flagged.replace(pattern, match => {
+      violations.add(label);
+      return `[FLAGGED:${label}] ${match}`;
+    });
+  }
+  return flagged;
+}
+
 function redactSensitiveText(text: string, violations: Set<string>): string {
   let redacted = redactCardNumbers(text, violations);
   for (const { label, pattern } of CREDENTIAL_PATTERNS) {
@@ -130,7 +152,8 @@ function redactSensitiveText(text: string, violations: Set<string>): string {
   }
   redacted = redactSsns(redacted, violations);
   redacted = redactStrictPii(redacted, violations);
-  return redactPromptInjectionMarkers(redacted, violations);
+  redacted = redactPromptInjectionMarkers(redacted, violations);
+  return flagUnverifiedClaims(redacted, violations);
 }
 
 function redactJsonValue(
