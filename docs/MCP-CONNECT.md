@@ -35,7 +35,7 @@ Mở file: `~/.config/claude/claude_desktop_config.json` (Linux) hoặc
       "env": {
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",
-        "MCP_PLUGIN_ALLOWLIST": "system.tool.ts,system.tool.js,skills.tool.ts,skills.tool.js",
+        "MCP_PLUGIN_ALLOWLIST": "system.tool.ts,system.tool.js,skills.tool.ts,skills.tool.js,knowledge.tool.ts,knowledge.tool.js",
         "MCP_PLUGIN_ISOLATION_MODE": "policy",
         "MCP_PROJECT_ID": "dps-superskills",
         "MCP_TENANT_ID": "tenant_local",
@@ -60,7 +60,7 @@ Mở Cursor Settings → MCP → Add server:
   "command": "node /home/ybao/B.1/DPS-Superskills/dist/index.js",
   "env": {
     "TRANSPORT_DRIVER": "stdio",
-    "MCP_PLUGIN_ALLOWLIST": "system.tool.ts,system.tool.js,skills.tool.ts,skills.tool.js",
+    "MCP_PLUGIN_ALLOWLIST": "system.tool.ts,system.tool.js,skills.tool.ts,skills.tool.js,knowledge.tool.ts,knowledge.tool.js",
     "MCP_PLUGIN_ISOLATION_MODE": "policy",
     "MCP_PROJECT_ID": "dps-superskills",
     "MCP_TENANT_ID": "tenant_local"
@@ -82,7 +82,7 @@ Trong `.claude/CLAUDE.md` của dự án, hoặc cấu hình MCP của IDE:
       "args": ["/home/ybao/B.1/DPS-Superskills/dist/index.js"],
       "env": {
         "TRANSPORT_DRIVER": "stdio",
-        "MCP_PLUGIN_ALLOWLIST": "system.tool.ts,system.tool.js,skills.tool.ts,skills.tool.js",
+        "MCP_PLUGIN_ALLOWLIST": "system.tool.ts,system.tool.js,skills.tool.ts,skills.tool.js,knowledge.tool.ts,knowledge.tool.js",
         "MCP_PLUGIN_ISOLATION_MODE": "policy",
         "MCP_PROJECT_ID": "dps-superskills",
         "MCP_TENANT_ID": "tenant_local"
@@ -107,7 +107,7 @@ MCP_AUTH_MODE=api_key
 MCP_API_KEY=<tạo string random ≥32 ký tự>
 ALLOWED_ORIGINS=http://localhost:3000
 ALLOWED_HOSTS=localhost,127.0.0.1
-MCP_PLUGIN_ALLOWLIST=system.tool.ts,system.tool.js,skills.tool.ts,skills.tool.js
+MCP_PLUGIN_ALLOWLIST=system.tool.ts,system.tool.js,skills.tool.ts,skills.tool.js,knowledge.tool.ts,knowledge.tool.js
 MCP_PLUGIN_ISOLATION_MODE=policy
 MCP_PROJECT_ID=dps-superskills
 MCP_TENANT_ID=tenant_local

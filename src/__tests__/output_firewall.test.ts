@@ -202,6 +202,34 @@ describe("output firewall", () => {
     expect(scanned.result.content[0].text).not.toContain("[FLAGGED:");
   });
 
+  test("does not flag completion claims with evidence on a nearby line (multi-line window)", () => {
+    const scanned = scanToolOutput({
+      content: [{
+        type: "text",
+        text: "The task is complete.\nAll tests pass with Fix Anchor documented.",
+      }],
+    });
+
+    expect(scanned.violations).not.toContain("UNVERIFIED_COMPLETION");
+    expect(scanned.result.content[0].text).not.toContain("[FLAGGED:UNVERIFIED_COMPLETION]");
+  });
+
+  test("flags completion claims when evidence appears outside the ±2-line window", () => {
+    const lines = [
+      "The task is complete.",
+      "line 2",
+      "line 3",
+      "line 4",
+      "Finally, all tests pass.",
+    ];
+    const scanned = scanToolOutput({
+      content: [{ type: "text", text: lines.join("\n") }],
+    });
+
+    expect(scanned.violations).toContain("UNVERIFIED_COMPLETION");
+    expect(scanned.result.content[0].text).toContain("[FLAGGED:UNVERIFIED_COMPLETION]");
+  });
+
   test("validates SSN before redaction", () => {
     const scanned = scanToolOutput({
       content: [{ type: "text", text: "valid 123-45-6789 invalid 000-12-3456, 666-12-3456, 901-12-3456, 123-00-6789, 123-45-0000" }],
