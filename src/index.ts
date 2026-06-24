@@ -69,6 +69,19 @@ async function main() {
 
     app.disable("x-powered-by");
 
+    // Health endpoints must be registered before the ALLOWED_HOSTS middleware so
+    // Fly.io / Docker health checkers (which send an internal IP as Host) are not
+    // rejected with 403.
+    app.get("/health/liveness", (_req, res) => { res.json({ status: "alive", version: "1.0.0" }); });
+    app.get("/health/readiness", async (_req, res) => {
+      try {
+        const healthy = await runtime.healthCheck();
+        res.status(healthy ? 200 : 503).json({ status: healthy ? "ready" : "not_ready", storage: ENV.STORAGE_DRIVER });
+      } catch {
+        res.status(503).json({ status: "not_ready", storage: ENV.STORAGE_DRIVER });
+      }
+    });
+
     app.use((req, res, next) => {
       if (!isAllowedHost(req.headers.host, allowedHosts)) {
         res.status(403).json({ error: "Invalid Host" });
@@ -119,16 +132,6 @@ async function main() {
         return;
       }
       next(error);
-    });
-
-    app.get("/health/liveness", (req, res) => { res.json({ status: "alive", version: "1.0.0" }); });
-    app.get("/health/readiness", async (req, res) => {
-      try {
-        const healthy = await runtime.healthCheck();
-        res.status(healthy ? 200 : 503).json({ status: healthy ? "ready" : "not_ready", storage: ENV.STORAGE_DRIVER });
-      } catch {
-        res.status(503).json({ status: "not_ready", storage: ENV.STORAGE_DRIVER });
-      }
     });
 
     app.use("/mcp", async (req, res, next) => {

@@ -247,9 +247,13 @@ node dist/index.js
 
 Client kết nối với header:
 ```
-Authorization: Bearer <MCP_API_KEY>
+x-api-key: <MCP_API_KEY>
 Content-Type: application/json
 ```
+
+> **Quan trọng**: với `MCP_AUTH_MODE=api_key`, server đọc header `x-api-key`,
+> KHÔNG phải `Authorization: Bearer`. Xem `src/security/auth.ts:76`.
+> `Authorization: Bearer` chỉ áp dụng cho `MCP_AUTH_MODE=jwt` / `oidc_jwks`.
 
 Docker Compose (production với Redis + JWT):
 ```bash
@@ -259,7 +263,51 @@ docker compose up -d
 
 ---
 
-## 9. Dev mode (hot reload)
+## 9. Deploy online lên Fly.io (để Claude.ai kết nối được)
+
+`stdio` chỉ chạy local — Claude.ai (web) cần một **public HTTPS URL**. Cách nhanh nhất: Fly.io.
+
+```bash
+# 1. Cài fly CLI (một lần)
+curl -L https://fly.io/install.sh | sh
+export PATH="$HOME/.fly/bin:$PATH"
+
+# 2. Login (mở browser)
+fly auth login
+
+# 3. Deploy — script tự tạo app, volume KB, secret API key, rồi deploy
+./deploy-fly.sh
+```
+
+Script in ra:
+- URL: `https://<app-name>.fly.dev/mcp`
+- `MCP_API_KEY` (lưu lại — chỉ hiện 1 lần)
+
+**Kết nối Claude.ai:**
+1. claude.ai → **Settings → Connectors → Add custom connector**
+2. URL: `https://<app-name>.fly.dev/mcp`
+3. Header tùy chỉnh: `x-api-key: <MCP_API_KEY>`
+
+> Nếu form Claude.ai **không có field nhập custom header** (chỉ có ô "Bearer token"/OAuth),
+> đây là hạn chế UI của Claude.ai chứ không phải server. Workaround: đổi server sang
+> `MCP_AUTH_MODE=jwt` và set `MCP_JWT_MAX_AGE_SECONDS=86400` (tối đa cho phép — đây là
+> giới hạn cứng trong `src/config/env.ts`, không thể vượt quá 24h), nghĩa là phải tự
+> mint lại JWT mỗi ngày bằng `jose` — kém tiện hơn `x-api-key` tĩnh. Ưu tiên thử
+> `x-api-key` trước.
+
+**Quản lý sau khi deploy:**
+```bash
+fly logs --app dps-superskills-mcp              # xem log
+fly deploy --app dps-superskills-mcp --remote-only  # deploy lại sau khi sửa code
+fly secrets set MCP_API_KEY=$(openssl rand -hex 32) --app dps-superskills-mcp  # đổi key
+fly status --app dps-superskills-mcp            # trạng thái machine
+```
+
+KB data (`docs/superskills/*.md`) được lưu trên Fly volume `superskills_kb` — sống sót qua các lần deploy/restart.
+
+---
+
+## 10. Dev mode (hot reload)
 
 ```bash
 pnpm dev
@@ -268,7 +316,7 @@ pnpm dev
 
 ---
 
-## 10. Ví dụ sử dụng
+## 11. Ví dụ sử dụng
 
 ```
 # Tìm skill phù hợp theo keyword:
@@ -310,7 +358,7 @@ kb_health()
 
 ---
 
-## 11. Danh sách 31 Skills
+## 12. Danh sách 31 Skills
 
 **DISCIPLINE** (Iron Laws — non-negotiable):
 `complexity-gate` · `tdd-verified` · `verification-before-completion` · `context-reanchor` · `epistemic-health-check` · `privacy-secrets-gate`
@@ -329,7 +377,7 @@ kb_health()
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 | Triệu chứng | Nguyên nhân | Fix |
 |-------------|-------------|-----|
@@ -338,3 +386,7 @@ kb_health()
 | Skills không load: "Skills directory not accessible" | `MCP_SKILLS_PATH` sai hoặc không build | Chạy `pnpm build`, hoặc set `MCP_SKILLS_PATH` đúng |
 | Resources không xuất hiện trong IDE | `MCP_ENABLE_SKILL_RESOURCES=false` | Set `MCP_ENABLE_SKILL_RESOURCES=true` |
 | Server crash khi start | Node version < 18 | Dùng Node.js ≥ 18 (đang dùng: `node --version`) |
+| HTTP 401 dù đã gửi `Authorization: Bearer <key>` | `MCP_AUTH_MODE=api_key` chỉ đọc header `x-api-key`, không đọc `Authorization` | Đổi sang header `x-api-key: <key>` |
+| HTTP 400 "Mcp-Method header is required" | Protocol rc2026 strict mode | Thêm header `Mcp-Method: <method>` khớp với `body.method` (vd. `tools/list`) |
+| HTTP 406 "Client must accept both..." | Thiếu Accept header | Thêm `Accept: application/json, text/event-stream` |
+| `FATAL: Native MCP Tasks require durable Redis storage in production` | `NODE_ENV=production` + `STORAGE_DRIVER` khác `redis` | Bỏ `NODE_ENV=production` (dùng cho personal/Fly.io deploy) hoặc đổi `STORAGE_DRIVER=redis` |

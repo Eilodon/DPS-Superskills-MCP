@@ -73,7 +73,9 @@ export function resetOidcJwksCacheForTests(): void {
 
 export async function authenticateHttpRequest(headers: Record<string, string | string[] | undefined>): Promise<RequestContext> {
   if (ENV.MCP_AUTH_MODE === "api_key") {
-    if (!isAuthorizedApiKey(headers["x-api-key"])) {
+    const keyFromHeader = headers["x-api-key"];
+    const keyFromBearer = bearerToken(headers.authorization ?? headers.Authorization);
+    if (!isAuthorizedApiKey(keyFromHeader) && !isAuthorizedApiKey(keyFromBearer)) {
       throw new Error("Unauthorized");
     }
     return resolveHttpRequestContext(headers);
