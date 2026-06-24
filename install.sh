@@ -29,7 +29,7 @@ cat <<EOF
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",
         "MCP_SAFE_MODE": "true",
-        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js",
+        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
         "MCP_ENABLE_SKILL_RESOURCES": "true"
       }
     }

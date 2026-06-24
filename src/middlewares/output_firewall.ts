@@ -37,16 +37,16 @@ const PROMPT_INJECTION_MARKERS: RegExp[] = [
   /do not tell (the )?user/gi,
 ];
 
-const UNVERIFIED_COMPLETION_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
-  {
-    label: "UNVERIFIED_COMPLETION",
-    pattern: /\b(?:task|feature|fix|implementation|work)\s+(?:is\s+)?(?:complete|done|finished|ready|shipped)\b(?!.*\b(?:evidence|verified|test(?:s|ed|ing)|Fix Anchor|proof mode|T[12])\b)/gi,
-  },
-  {
-    label: "HEDGE_LANGUAGE",
-    pattern: /\b(?:should work|probably (?:works?|fine|correct)|seems to (?:work|be|pass)|i(?:'m| am) confident)\b/gi,
-  },
-];
+const EVIDENCE_WINDOW_LINES = 2;
+
+const EVIDENCE_KEYWORD_RE =
+  /\b(?:evidence|verified|verification|test(?:s|ed|ing)?\s+(?:pass|passed|passing|fail|failed)|tests?\s*\(\d+\/\d+\)|Fix Anchor|proof mode|T[12]\b)/i;
+
+const UNVERIFIED_COMPLETION_RE =
+  /\b(?:task|feature|fix|implementation|work)\s+(?:is\s+)?(?:complete|done|finished|ready|shipped)\b/gi;
+
+const HEDGE_LANGUAGE_RE =
+  /\b(?:should work|probably (?:works?|fine|correct)|seems to (?:work|be|pass)|i(?:'m| am) confident)\b/gi;
 
 interface StructuredRedactionState {
   nodes: number;
@@ -131,15 +131,75 @@ function redactStrictPii(text: string, violations: Set<string>): string {
   return redacted;
 }
 
+function buildLineIndex(text: string): number[] {
+  const starts: number[] = [0];
+  for (let i = 0; i < text.length; i += 1) {
+    if (text.charCodeAt(i) === 10) starts.push(i + 1);
+  }
+  return starts;
+}
+
+function lineNumberAt(lineStarts: number[], offset: number): number {
+  let lo = 0;
+  let hi = lineStarts.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >>> 1;
+    if (lineStarts[mid] <= offset) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
+}
+
+function hasEvidenceWithin(text: string, lineStarts: number[], lineIdx: number): boolean {
+  const startLine = Math.max(0, lineIdx - EVIDENCE_WINDOW_LINES);
+  const endLine = Math.min(lineStarts.length - 1, lineIdx + EVIDENCE_WINDOW_LINES);
+  const sliceStart = lineStarts[startLine];
+  const sliceEnd =
+    endLine + 1 < lineStarts.length ? lineStarts[endLine + 1] : text.length;
+  return EVIDENCE_KEYWORD_RE.test(text.slice(sliceStart, sliceEnd));
+}
+
 function flagUnverifiedClaims(text: string, violations: Set<string>): string {
-  let flagged = text;
-  for (const { label, pattern } of UNVERIFIED_COMPLETION_PATTERNS) {
-    flagged = flagged.replace(pattern, match => {
-      violations.add(label);
-      return `[FLAGGED:${label}] ${match}`;
+  const matches: Array<{ start: number; end: number; label: string; replacement: string }> = [];
+  const lineStarts = buildLineIndex(text);
+
+  for (const m of text.matchAll(UNVERIFIED_COMPLETION_RE)) {
+    const start = m.index ?? 0;
+    const lineIdx = lineNumberAt(lineStarts, start);
+    if (hasEvidenceWithin(text, lineStarts, lineIdx)) continue;
+    violations.add("UNVERIFIED_COMPLETION");
+    matches.push({
+      start,
+      end: start + m[0].length,
+      label: "UNVERIFIED_COMPLETION",
+      replacement: `[FLAGGED:UNVERIFIED_COMPLETION] ${m[0]}`,
     });
   }
-  return flagged;
+
+  for (const m of text.matchAll(HEDGE_LANGUAGE_RE)) {
+    const start = m.index ?? 0;
+    violations.add("HEDGE_LANGUAGE");
+    matches.push({
+      start,
+      end: start + m[0].length,
+      label: "HEDGE_LANGUAGE",
+      replacement: `[FLAGGED:HEDGE_LANGUAGE] ${m[0]}`,
+    });
+  }
+
+  if (matches.length === 0) return text;
+
+  matches.sort((a, b) => a.start - b.start);
+  const parts: string[] = [];
+  let cursor = 0;
+  for (const match of matches) {
+    if (match.start < cursor) continue;
+    parts.push(text.slice(cursor, match.start));
+    parts.push(match.replacement);
+    cursor = match.end;
+  }
+  parts.push(text.slice(cursor));
+  return parts.join("");
 }
 
 function redactSensitiveText(text: string, violations: Set<string>): string {

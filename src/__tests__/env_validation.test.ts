@@ -37,6 +37,7 @@ describe("env validation", () => {
       STORAGE_DRIVER: "redis",
       REDIS_URL: "redis://localhost:6379",
       MCP_ENCRYPTION_KEY: "x".repeat(32),
+      MCP_IDEMPOTENCY_SECRET: "i".repeat(32),
       MCP_IDEMPOTENCY_RESULT_TTL_SECONDS: "604800",
     });
 
@@ -93,6 +94,7 @@ describe("env validation", () => {
       STORAGE_DRIVER: "redis",
       REDIS_URL: "redis://localhost:6379",
       MCP_ENCRYPTION_KEY: "x".repeat(32),
+      MCP_IDEMPOTENCY_SECRET: "i".repeat(32),
     });
 
     expect(mod.ENV.MCP_IDEMPOTENCY_RESULT_TTL_SECONDS).toBe(604800);
@@ -411,6 +413,7 @@ describe("env validation", () => {
       STORAGE_DRIVER: "redis",
       REDIS_URL: "redis://localhost:6379",
       MCP_ENCRYPTION_KEY: "x".repeat(32),
+      MCP_IDEMPOTENCY_SECRET: "i".repeat(32),
       TRANSPORT_DRIVER: "http",
       MCP_AUTH_MODE: "jwt",
       MCP_JWT_SECRET: "s".repeat(32),
@@ -436,6 +439,7 @@ describe("env validation", () => {
       STORAGE_DRIVER: "redis",
       REDIS_URL: "redis://localhost:6379",
       MCP_ENCRYPTION_KEY: "x".repeat(32),
+      MCP_IDEMPOTENCY_SECRET: "i".repeat(32),
       TRANSPORT_DRIVER: "http",
       MCP_AUTH_MODE: "jwt",
       MCP_JWT_SECRET: "s".repeat(32),

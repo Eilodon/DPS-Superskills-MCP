@@ -14,7 +14,7 @@
 import { z } from "zod/v4";
 import { SKILL_REGISTRY, SKILL_MAP } from "../skills/skill_registry.js";
 import { SkillLoader } from "../skills/skill_loader.js";
-import { formatSkillResponse, formatSkillList, loadProjectContext } from "../skills/skill_executor.js";
+import { formatSkillResponse, formatSkillList, loadProjectContext, suggestedNextSkills } from "../skills/skill_executor.js";
 import type { ToolDefinition } from "../mcp/adapter/tool_registry.js";
 
 // Build Zod enum from the registry (must have at least 1 entry — guaranteed)
@@ -194,6 +194,14 @@ const skillRunTool: ToolDefinition = {
         "'full': everything including output template + nano reference (~2000+ tokens, for first-time reading). " +
         "Default: 'full'."
       ),
+    format: z
+      .enum(["text", "json"])
+      .optional()
+      .describe(
+        "Response format. " +
+        "'text' (default): human-readable workflow text. " +
+        "'json': structuredContent with parsed sections (skill metadata, checklist, gotchas, commands, projectContext) for agent-to-agent dispatch."
+      ),
   },
   allowedPhases: ["intake", "execution", "review", "completed"],
   capabilities: ["fs.read"],
@@ -215,6 +223,7 @@ const skillRunTool: ToolDefinition = {
       query,
       mode,
       depth,
+      format,
     } = args as {
       skill_name: string;
       task_description?: string;
@@ -223,6 +232,7 @@ const skillRunTool: ToolDefinition = {
       query?: string;
       mode?: string;
       depth?: "nano" | "checklist" | "full";
+      format?: "text" | "json";
     };
 
     const meta = SKILL_MAP.get(skill_name);
@@ -258,6 +268,32 @@ const skillRunTool: ToolDefinition = {
       mode,
       depth,
     }, projectCtx);
+
+    if (format === "json") {
+      const structuredContent = {
+        skill: {
+          name: skill.name,
+          register: skill.register,
+          goal: skill.goal,
+          announce: skill.announce,
+          constraints: skill.constraints,
+        },
+        depth: depth ?? "full",
+        checklist: skill.checklist,
+        commands: skill.commands,
+        gotchas: skill.gotchas
+          .filter(g => g.status === "ACTIVE")
+          .map(g => ({ claim: g.claim, doInstead: g.doInstead })),
+        outputTemplate: skill.outputTemplate || null,
+        nano: skill.nanoContent || null,
+        projectContext: projectCtx ?? null,
+        suggestedNext: suggestedNextSkills(skill_name),
+      };
+      return {
+        content: [{ type: "text", text }],
+        structuredContent,
+      };
+    }
 
     return {
       content: [{ type: "text", text }],
@@ -452,6 +488,25 @@ const skillDispatchTool: ToolDefinition = {
           skills.push(extra);
         }
       }
+    }
+
+    if (complexity_tier === "C0" && skills.length === 0) {
+      const c0Prompt = [
+        `# ROLE: Implementer`,
+        ``,
+        `## Task`,
+        task_description,
+        ``,
+        `## Notes`,
+        `This is a C0 task — no DPS skills required. Implement directly.`,
+        `- Keep the change small and focused.`,
+        `- Run the existing tests to confirm nothing regressed.`,
+        additional_constraints ? `- ${additional_constraints}` : "",
+      ].filter(Boolean).join("\n");
+
+      return {
+        content: [{ type: "text", text: c0Prompt }],
+      };
     }
 
     const nanoRefs: string[] = [];

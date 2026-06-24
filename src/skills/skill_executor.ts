@@ -56,6 +56,17 @@ function formatFooter(skill: ParsedSkill): string[] {
   ];
 }
 
+function formatSessionConsolidationHint(skill: ParsedSkill): string[] {
+  if (skill.name !== "session-handoff" && skill.name !== "knowledge-compound") return [];
+  return [
+    "\nSESSION CONSOLIDATION HOOK:",
+    "  Before closing, capture lessons learned via kb_write so they survive across sessions:",
+    "    kb_write(category=\"gotcha\", slug=\"...\", content=\"<what failed + what to do instead>\")",
+    "    kb_write(category=\"decision\", slug=\"...\", content=\"<context + decision + consequences>\")",
+    "  Entries auto-appear in future skill_run responses via project context injection.",
+  ];
+}
+
 function formatEnforcementGates(skill: ParsedSkill): string[] {
   const gates: string[] = [];
   const register = skill.register.toUpperCase();
@@ -150,6 +161,7 @@ function formatChecklistResponse(skill: ParsedSkill, args: SkillArgs, projectCtx
 
   sections.push(...formatCallerContext(args));
   sections.push(...formatEnforcementGates(skill));
+  sections.push(...formatSessionConsolidationHint(skill));
   if (projectCtx) sections.push(...formatProjectContext(projectCtx));
 
   if (skill.checklist.length > 0) {
@@ -208,6 +220,7 @@ function formatFullResponse(skill: ParsedSkill, args: SkillArgs, projectCtx?: Pr
 
   sections.push(...formatCallerContext(args));
   sections.push(...formatEnforcementGates(skill));
+  sections.push(...formatSessionConsolidationHint(skill));
   if (projectCtx) sections.push(...formatProjectContext(projectCtx));
 
   if (skill.checklist.length > 0) {
@@ -264,11 +277,47 @@ function formatFullResponse(skill: ParsedSkill, args: SkillArgs, projectCtx?: Pr
 export interface ProjectContext {
   patternDebt: string[];
   domainTerms: string[];
+  knowledgeGotchas: string[];
+}
+
+const KB_CATEGORIES = ["gotcha", "bug-pattern"] as const;
+const MAX_KB_INJECTED = 8;
+
+async function loadKnowledgeBaseHints(base: string): Promise<string[]> {
+  const hints: string[] = [];
+  for (const category of KB_CATEGORIES) {
+    try {
+      const file = path.join(base, "docs", "superskills", `${category}.md`);
+      const content = await fs.readFile(file, "utf-8");
+      const entries = content.split(/(?=^### KB-)/m);
+      for (const entry of entries) {
+        if (!entry.startsWith("### KB-")) continue;
+        const idMatch = entry.match(/^### (KB-[A-Z-]+-[a-z0-9-]+)/);
+        const contentMatch = entry.match(/\*\*content:\*\*\s*(.+)/);
+        if (!idMatch) continue;
+        const summary = (contentMatch?.[1] ?? "").trim().slice(0, 100);
+        hints.push(summary ? `${idMatch[1]}: ${summary}` : idMatch[1]);
+        if (hints.length >= MAX_KB_INJECTED) return hints;
+      }
+    } catch { /* file may not exist */ }
+  }
+  return hints;
+}
+
+const PROJECT_CONTEXT_TTL_MS = 30 * 1000;
+let projectContextCache: { value: ProjectContext; expiresAt: number } | null = null;
+
+export function clearProjectContextCache(): void {
+  projectContextCache = null;
 }
 
 export async function loadProjectContext(): Promise<ProjectContext> {
+  if (projectContextCache && projectContextCache.expiresAt > Date.now()) {
+    return projectContextCache.value;
+  }
+
   const base = path.resolve(skillsBasePath(), "..", "..");
-  const ctx: ProjectContext = { patternDebt: [], domainTerms: [] };
+  const ctx: ProjectContext = { patternDebt: [], domainTerms: [], knowledgeGotchas: [] };
 
   try {
     const debtPath = path.join(base, "docs", "superskills", "pattern-debt.md");
@@ -284,6 +333,9 @@ export async function loadProjectContext(): Promise<ProjectContext> {
     ctx.domainTerms = terms.map(m => m[1]).slice(0, 10);
   } catch { /* file may not exist */ }
 
+  ctx.knowledgeGotchas = await loadKnowledgeBaseHints(base);
+
+  projectContextCache = { value: ctx, expiresAt: Date.now() + PROJECT_CONTEXT_TTL_MS };
   return ctx;
 }
 
@@ -301,7 +353,47 @@ function formatProjectContext(ctx: ProjectContext): string[] {
       ...ctx.domainTerms.map(term => `  • ${term}`),
     );
   }
+  if (ctx.knowledgeGotchas.length > 0) {
+    lines.push(
+      `\nPROJECT CONTEXT — KB GOTCHAS / BUG PATTERNS (${ctx.knowledgeGotchas.length}; use kb_query for full bodies):`,
+      ...ctx.knowledgeGotchas.map(hint => `  ⚠ ${hint}`),
+    );
+  }
   return lines;
+}
+
+// Curated typical-next-step routing per skill.
+// Agents may deviate (these are hints, not enforced), but the chain documents
+// the DPS-recommended flow so a fresh agent doesn't have to guess.
+const SKILL_ROUTING_HINTS: Record<string, string[]> = {
+  "complexity-gate": ["brainstorming", "tdd-verified"],
+  "brainstorming": ["audit-design", "dps-init", "writing-plans"],
+  "audit-design": ["writing-plans", "dps-promote"],
+  "writing-plans": ["task-risk-score", "executing-plans", "subagent-driven-development"],
+  "task-risk-score": ["specialist-review", "executing-plans"],
+  "tdd-verified": ["verification-before-completion"],
+  "verification-before-completion": ["adr-commit", "release-readiness"],
+  "systematic-debugging": ["tdd-verified", "pattern-globalize"],
+  "pattern-globalize": ["kb-query", "knowledge-compound"],
+  "specialist-review": ["release-readiness", "verification-before-completion"],
+  "executing-plans": ["verification-before-completion"],
+  "subagent-driven-development": ["specialist-review", "verification-before-completion"],
+  "dispatching-parallel-agents": ["verification-before-completion"],
+  "release-readiness": ["adr-commit"],
+  "adr-commit": ["knowledge-compound"],
+  "knowledge-compound": ["epistemic-health-check"],
+  "domain-alignment": ["brainstorming"],
+  "audit-distill": ["knowledge-compound"],
+  "dps-init": ["audit-design"],
+  "dps-promote": ["writing-plans"],
+  "context-reanchor": ["verification-before-completion"],
+  "session-handoff": ["adr-commit"],
+  "using-git-worktrees": ["adr-commit"],
+  "using-super-skills": ["complexity-gate"],
+};
+
+export function suggestedNextSkills(name: string): string[] {
+  return SKILL_ROUTING_HINTS[name] ?? [];
 }
 
 /**
@@ -325,6 +417,10 @@ export function formatSkillList(skills: Array<{ name: string; description: strin
     for (const s of items) {
       lines.push(`  ${s.name}`);
       lines.push(`    ${s.description}`);
+      const next = suggestedNextSkills(s.name);
+      if (next.length > 0) {
+        lines.push(`    → suggested next: ${next.join(", ")}`);
+      }
     }
     lines.push("");
   }
@@ -332,6 +428,7 @@ export function formatSkillList(skills: Array<{ name: string; description: strin
   lines.push(`Total: ${skills.length} skills`);
   lines.push('Use skill_read(skill_name) to get the full SKILL.md content.');
   lines.push('Use skill_run(skill_name, task_description) to invoke a skill with context.');
+  lines.push('Routing hints ("suggested next") are advisory — agents may deviate.');
 
   return lines.join("\n");
 }

@@ -43,7 +43,11 @@ const EnvSchema = z.object({
   MCP_TENANT_ID: z.string().default("tenant_local"),
   MCP_TRUST_IDENTITY_HEADERS: z.boolean().default(false),
 
-  MCP_PLUGIN_ALLOWLIST: z.string().default("system.tool.js,system.tool.ts"),
+  MCP_PLUGIN_ALLOWLIST: z
+    .string()
+    .default(
+      "system.tool.js,system.tool.ts,skills.tool.js,skills.tool.ts,knowledge.tool.js,knowledge.tool.ts",
+    ),
   MCP_PLUGIN_AUTO_DISCOVERY: z.boolean().default(false),
   MCP_ALLOW_UNSAFE_PLUGIN_AUTO_DISCOVERY: z.boolean().default(false),
   MCP_ENABLE_TEST_TOOLS: z.boolean().default(false),
@@ -133,9 +137,18 @@ function parseList(raw: string): string[] {
   return raw.split(",").map(s => s.trim()).filter(Boolean);
 }
 
+const BUILT_IN_PLUGIN_NAMES = new Set([
+  "system.tool.ts",
+  "system.tool.js",
+  "skills.tool.ts",
+  "skills.tool.js",
+  "knowledge.tool.ts",
+  "knowledge.tool.js",
+]);
+
 function hasNonBuiltInPluginConfig(allowlist: string, autoDiscovery: boolean): boolean {
   if (autoDiscovery) return true;
-  return parseList(allowlist).some(name => name !== "system.tool.ts" && name !== "system.tool.js");
+  return parseList(allowlist).some(name => !BUILT_IN_PLUGIN_NAMES.has(name));
 }
 
 function loadEnv() {

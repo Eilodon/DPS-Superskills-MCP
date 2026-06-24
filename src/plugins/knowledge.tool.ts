@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { skillsBasePath } from "../skills/skill_loader.js";
+import { clearProjectContextCache } from "../skills/skill_executor.js";
 import type { ToolDefinition } from "../mcp/adapter/tool_registry.js";
 
 function kbBasePath(): string {
@@ -29,6 +30,12 @@ const kbWriteTool: ToolDefinition = {
       .describe("The type of knowledge being recorded."),
     slug: z
       .string()
+      .min(1)
+      .max(80)
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        "slug must be kebab-case: lowercase letters/digits separated by single hyphens (e.g. 'async-no-await').",
+      )
       .describe("Unique kebab-case identifier for this entry (e.g. 'async-no-await', 'user-means-tenant')."),
     content: z
       .string()
@@ -101,6 +108,8 @@ const kbWriteTool: ToolDefinition = {
       await fs.appendFile(filePath, entry, "utf-8");
     }
 
+    clearProjectContextCache();
+
     return {
       content: [{ type: "text", text: `[kb_write] Recorded ${entryId} in ${category}.md (${date}, source: ${source}).` }],
     };
@@ -111,7 +120,8 @@ const kbQueryTool: ToolDefinition = {
   name: "kb_query",
   description:
     "Search the project's persistent knowledge base for entries matching a query. " +
-    "Returns matching gotchas, patterns, terms, and decisions across all categories.",
+    "By default returns a compact summary (id + first content line) per match. " +
+    "Set detail=true to fetch the full entry bodies (use after narrowing by id).",
   inputSchema: {
     query: z
       .string()
@@ -120,6 +130,17 @@ const kbQueryTool: ToolDefinition = {
       .enum([...KB_ENTRY_CATEGORIES, "all"])
       .optional()
       .describe("Filter to a specific category. Default: 'all'."),
+    detail: z
+      .boolean()
+      .optional()
+      .describe("If true, return the full entry body for every match. Default: false (summary only)."),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe("Maximum entries to return. Default: 20."),
   },
   allowedPhases: ["intake", "execution", "review", "completed"],
   capabilities: ["fs.read"],
@@ -133,14 +154,20 @@ const kbQueryTool: ToolDefinition = {
     taskSupport: "forbidden",
   },
   handler: async (args) => {
-    const { query, category = "all" } = args as { query: string; category?: string };
+    const { query, category = "all", detail = false, limit = 20 } = args as {
+      query: string;
+      category?: string;
+      detail?: boolean;
+      limit?: number;
+    };
     const dir = kbBasePath();
 
     const categories = category === "all"
       ? [...KB_ENTRY_CATEGORIES]
       : [category];
 
-    const results: string[] = [];
+    interface KbMatch { id: string; summary: string; full: string; }
+    const matches: KbMatch[] = [];
     const queryLower = query.toLowerCase();
 
     for (const cat of categories) {
@@ -148,21 +175,45 @@ const kbQueryTool: ToolDefinition = {
         const content = await fs.readFile(path.join(dir, `${cat}.md`), "utf-8");
         const entries = content.split(/(?=^### KB-)/m);
         for (const entry of entries) {
-          if (entry.toLowerCase().includes(queryLower)) {
-            results.push(entry.trim());
-          }
+          if (!entry.startsWith("### KB-")) continue;
+          if (!entry.toLowerCase().includes(queryLower)) continue;
+          const idMatch = entry.match(/^### (KB-[A-Z-]+-[a-z0-9-]+)/);
+          const contentMatch = entry.match(/\*\*content:\*\*\s*(.+)/);
+          const summary = (contentMatch?.[1] ?? "").trim().slice(0, 140);
+          matches.push({
+            id: idMatch?.[1] ?? "KB-UNKNOWN",
+            summary,
+            full: entry.trim(),
+          });
         }
       } catch { /* file doesn't exist for this category */ }
     }
 
-    if (results.length === 0) {
+    if (matches.length === 0) {
       return {
         content: [{ type: "text", text: `[kb_query] No entries found for "${query}" in ${category === "all" ? "any category" : category}.` }],
       };
     }
 
+    const truncated = matches.slice(0, limit);
+    const overflow = matches.length - truncated.length;
+
+    if (detail) {
+      const body = truncated.map(m => m.full).join("\n\n");
+      const note = overflow > 0 ? `\n\n[kb_query] ${overflow} additional match(es) omitted (limit=${limit}).` : "";
+      return {
+        content: [{ type: "text", text: `[kb_query] ${truncated.length} result(s) for "${query}" (detail=true):\n\n${body}${note}` }],
+      };
+    }
+
+    const summaryLines = truncated.map(m => `- ${m.id}: ${m.summary}`);
+    const tip = `\n\nUse detail=true (and optionally narrow query to an id) to fetch full bodies.`;
+    const note = overflow > 0 ? `\n[kb_query] ${overflow} additional match(es) omitted (limit=${limit}).` : "";
     return {
-      content: [{ type: "text", text: `[kb_query] ${results.length} result(s) for "${query}":\n\n${results.join("\n\n")}` }],
+      content: [{
+        type: "text",
+        text: `[kb_query] ${truncated.length} result(s) for "${query}" (summary):\n${summaryLines.join("\n")}${note}${tip}`,
+      }],
     };
   },
 };

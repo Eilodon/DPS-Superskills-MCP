@@ -222,12 +222,37 @@ export function extractOutput(content: string): string {
 // SkillLoader
 // ---------------------------------------------------------------------------
 
+const SKILL_CACHE_TTL_MS = 5 * 60 * 1000;
+const skillCache = new Map<string, { value: ParsedSkill; expiresAt: number }>();
+const nanoCache = new Map<string, { value: string; expiresAt: number }>();
+
+function cacheGet<T>(store: Map<string, { value: T; expiresAt: number }>, key: string): T | undefined {
+  const entry = store.get(key);
+  if (!entry) return undefined;
+  if (entry.expiresAt < Date.now()) {
+    store.delete(key);
+    return undefined;
+  }
+  return entry.value;
+}
+
+function cacheSet<T>(store: Map<string, { value: T; expiresAt: number }>, key: string, value: T): void {
+  store.set(key, { value, expiresAt: Date.now() + SKILL_CACHE_TTL_MS });
+}
+
 export class SkillLoader {
+  static clearCache(): void {
+    skillCache.clear();
+    nanoCache.clear();
+  }
+
   /**
    * Load and parse a single skill by name.
    * Throws if the skill directory or SKILL.md does not exist.
    */
   static async load(skillName: string): Promise<ParsedSkill> {
+    const cached = cacheGet(skillCache, skillName);
+    if (cached) return cached;
     const base = skillsBasePath();
     const skillDir = path.join(base, skillName);
     const skillFile = path.join(skillDir, "SKILL.md");
@@ -249,7 +274,7 @@ export class SkillLoader {
 
     const frontmatter = parseFrontmatter(fullContent);
 
-    return {
+    const parsed: ParsedSkill = {
       name: frontmatter.name ?? skillName,
       description: frontmatter.description ?? "",
       register: (() => {
@@ -275,19 +300,27 @@ export class SkillLoader {
       nanoContent,
       fullContent,
     };
+
+    cacheSet(skillCache, skillName, parsed);
+    return parsed;
   }
 
   /**
    * Load just the nano content for a skill (lightweight, no parse).
    */
   static async loadNano(skillName: string): Promise<string> {
+    const cached = cacheGet(nanoCache, skillName);
+    if (cached !== undefined) return cached;
     const base = skillsBasePath();
     const nanoFile = path.join(base, skillName, `${skillName}.nano.md`);
+    let content = "";
     try {
-      return await fs.readFile(nanoFile, "utf-8");
+      content = await fs.readFile(nanoFile, "utf-8");
     } catch {
-      return "";
+      content = "";
     }
+    cacheSet(nanoCache, skillName, content);
+    return content;
   }
 
   /**
