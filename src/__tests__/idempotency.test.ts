@@ -33,7 +33,20 @@ describe("Idempotency Manager", () => {
 
   test("peek should not create an idempotency entry for untrusted task ids", async () => {
     expect(globalIdempotencyManager.isValidKey("not-a-real-job-id")).toBe(false);
-    expect(await globalIdempotencyManager.peek("not-a-real-job-id")).toBeNull();
+    expect(await globalIdempotencyManager.peek("not-a-real-job-id")).toEqual({ found: false });
+  });
+
+  test("peek distinguishes a missing key from a cached null result", async () => {
+    const key = globalIdempotencyManager.generateKey("tenant-null", "null_tool", { test: true });
+
+    expect(await globalIdempotencyManager.peek(key)).toEqual({ found: false });
+
+    await globalIdempotencyManager.tryAcquireOrGetCached(key);
+    await globalIdempotencyManager.commit(key, null);
+
+    expect(await globalIdempotencyManager.peek(key)).toEqual({ found: true, value: null });
+
+    await globalIdempotencyManager.release(key).catch(() => undefined);
   });
 
   test("idempotency args reject non-JSON objects that would hash ambiguously", () => {
@@ -57,7 +70,7 @@ describe("Idempotency Manager", () => {
     await globalIdempotencyManager.commitError(key, errorResult, 300);
 
     const cached = await globalIdempotencyManager.peek(key);
-    expect(cached).toEqual(errorResult);
+    expect(cached).toEqual({ found: true, value: errorResult });
 
     // Clean up
     await globalIdempotencyManager.release(key).catch(() => undefined);

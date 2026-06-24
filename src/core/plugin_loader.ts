@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ENV } from "../config/env.js";
+import { ENV, BUILT_IN_PLUGIN_NAMES } from "../config/env.js";
 import { z } from "zod/v4";
 import type { ToolDefinition } from "../mcp/adapter/tool_registry.js";
 import { ChildProcessPluginRunner } from "./plugin_external_runner.js";
@@ -18,20 +18,14 @@ function parseList(raw: string): string[] {
   return raw.split(",").map(s => s.trim()).filter(Boolean);
 }
 
-// Built-in first-party plugins shipped with this project.
-// These load in-process (no child-process boundary) because they are authored
-// alongside the runtime and are never third-party or untrusted code.
-const TRUSTED_BUILT_IN_PLUGINS = new Set([
-  "system.tool.ts",
-  "system.tool.js",
-  "skills.tool.ts",
-  "skills.tool.js",
-  "knowledge.tool.ts",
-  "knowledge.tool.js",
-]);
-
+// Built-in first-party plugins shipped with this project load in-process
+// (no child-process boundary) because they are authored alongside the
+// runtime and are never third-party or untrusted code.
+// Source of truth is BUILT_IN_PLUGIN_NAMES in config/env.ts — the boot-time
+// production gate (hasNonBuiltInPluginConfig) must agree with this runtime
+// check, or untrusted plugins could slip past the sandbox requirement.
 function isTrustedBuiltInPlugin(fileName: string): boolean {
-  return TRUSTED_BUILT_IN_PLUGINS.has(fileName);
+  return BUILT_IN_PLUGIN_NAMES.has(fileName);
 }
 
 

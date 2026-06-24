@@ -56,10 +56,16 @@ function hashPayload(payload: string): string {
     : createHash("sha256").update(payload).digest("hex");
 }
 
+export interface IdempotencyPeekResult {
+  /** False when the key was never committed (or is invalid) — distinct from a cached `value` of `null`. */
+  found: boolean;
+  value?: unknown;
+}
+
 export interface IIdempotencyManager {
   generateKey(tenantId: string, toolName: string, args: unknown, owner?: string): string;
   isValidKey(idempotencyKey: string): boolean;
-  peek(idempotencyKey: string): Promise<unknown>;
+  peek(idempotencyKey: string): Promise<IdempotencyPeekResult>;
   tryAcquireOrGetCached(idempotencyKey: string): Promise<{ locked: boolean; cached?: unknown }>;
   commit(idempotencyKey: string, result: unknown): Promise<void>;
   /** Commit an error result with a shorter, configurable TTL (vs. full result TTL). */
@@ -112,10 +118,11 @@ class MemoryIdempotencyManager implements IIdempotencyManager {
     return idempotencyKey.startsWith(keyPrefix()) && /^[a-f0-9]{64}$/.test(idempotencyKey.slice(keyPrefix().length));
   }
 
-  async peek(idempotencyKey: string): Promise<unknown> {
-    if (!this.isValidKey(idempotencyKey)) return null;
+  async peek(idempotencyKey: string): Promise<IdempotencyPeekResult> {
+    if (!this.isValidKey(idempotencyKey)) return { found: false };
     this.cleanup(idempotencyKey);
-    return this.cache.get(idempotencyKey)?.value ?? null;
+    const entry = this.cache.get(idempotencyKey);
+    return entry ? { found: true, value: entry.value } : { found: false };
   }
 
   async tryAcquireOrGetCached(idempotencyKey: string): Promise<{ locked: boolean; cached?: unknown }> {
@@ -142,16 +149,16 @@ class MemoryIdempotencyManager implements IIdempotencyManager {
   }
 
   async release(idempotencyKey: string): Promise<void> {
-    const cached = await this.peek(idempotencyKey);
-    if (isWorkingRecord(cached)) {
+    const { found, value } = await this.peek(idempotencyKey);
+    if (found && isWorkingRecord(value)) {
       this.cache.delete(idempotencyKey);
     }
   }
 
   async extendWorking(idempotencyKey: string): Promise<void> {
-    const cached = await this.peek(idempotencyKey);
-    if (isWorkingRecord(cached)) {
-      this.cache.set(idempotencyKey, { value: cached, expiresAt: Date.now() + this.workingTtlMs });
+    const { found, value } = await this.peek(idempotencyKey);
+    if (found && isWorkingRecord(value)) {
+      this.cache.set(idempotencyKey, { value, expiresAt: Date.now() + this.workingTtlMs });
     }
   }
 }
@@ -175,14 +182,14 @@ class RedisIdempotencyManager implements IIdempotencyManager {
     return idempotencyKey.startsWith(keyPrefix()) && /^[a-f0-9]{64}$/.test(idempotencyKey.slice(keyPrefix().length));
   }
 
-  async peek(idempotencyKey: string): Promise<unknown> {
-    if (!this.isValidKey(idempotencyKey)) return null;
+  async peek(idempotencyKey: string): Promise<IdempotencyPeekResult> {
+    if (!this.isValidKey(idempotencyKey)) return { found: false };
     const raw = await this.redis.get(idempotencyKey);
-    if (!raw) return null;
+    if (raw === null) return { found: false };
     try {
-      return JSON.parse(raw) as unknown;
+      return { found: true, value: JSON.parse(raw) as unknown };
     } catch {
-      return null;
+      return { found: false };
     }
   }
 

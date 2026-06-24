@@ -256,9 +256,17 @@ function redactJsonValue(
   }
 
   if (Array.isArray(value)) {
-    return value.map((item, index) =>
+    if (state.seen.has(value)) {
+      violations.add(STRUCTURED_CYCLE);
+      return "[REDACTED:STRUCTURED_CONTENT_CYCLE]";
+    }
+
+    state.seen.add(value);
+    const out = value.map((item, index) =>
       redactJsonValue(item, violations, state, [...path, String(index)], depth + 1),
     );
+    state.seen.delete(value);
+    return out;
   }
 
   if (value && typeof value === "object") {

@@ -158,8 +158,13 @@ describe("env validation", () => {
     expect(exit).toHaveBeenCalledWith(1);
   });
 
-  test("non-built-in plugin isolation defaults to external with deny/read-only worker guards", async () => {
+  test("external isolation mode has deny/read-only worker guard defaults", async () => {
+    // MCP_PLUGIN_ISOLATION_MODE is stubbed explicitly here because dotenv loads
+    // the project .env file (which sets it to "policy") before vi.stubEnv tracking
+    // begins. Without an explicit stub, vi.unstubAllEnvs() cannot clear the dotenv
+    // pollution and the schema default ("external") never takes effect.
     const mod = await importEnvWith({
+      MCP_PLUGIN_ISOLATION_MODE: "external",
       MCP_IDEMPOTENCY_RESULT_TTL_SECONDS: "3600",
     });
 

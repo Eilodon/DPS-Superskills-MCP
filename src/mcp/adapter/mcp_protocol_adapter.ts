@@ -48,6 +48,58 @@ function standardJsonSchema(schema: Record<string, unknown>, kind: "input" | "ou
   };
 }
 
+// Module-level schema cache. guardJsonSchema202012 (walkSchema tree traversal) and
+// z.object() compilation are synchronous CPU work. Without this cache they run for
+// every tool on every HTTP request inside connectEphemeral → createServer → registerTools.
+// Schemas are stable for the process lifetime (PluginLoader is boot-only;
+// assertPluginManifestStable() enforces no changes after startup).
+interface CompiledToolSchemas {
+  registrationInput: StandardJsonSchema | z.ZodType<any>;
+  registrationOutput: StandardJsonSchema | undefined;
+  listInput: Record<string, unknown>;
+  listOutput: Record<string, unknown> | undefined;
+}
+
+const toolSchemaCache = new Map<string, CompiledToolSchemas>();
+
+function getOrCompileToolSchemas(tool: ToolDefinition<unknown>): CompiledToolSchemas {
+  const hit = toolSchemaCache.get(tool.name);
+  if (hit) return hit;
+
+  const guardedInput = tool.inputJsonSchema
+    ? guardJsonSchema202012(tool.inputJsonSchema, "input")
+    : undefined;
+  const guardedOutput = tool.outputSchema
+    ? guardJsonSchema202012(tool.outputSchema, "output")
+    : undefined;
+
+  const registrationInput: StandardJsonSchema | z.ZodType<any> = guardedInput
+    ? standardJsonSchema(guardedInput, "input")
+    : z.object(tool.inputSchema as any);
+
+  const registrationOutput: StandardJsonSchema | undefined = guardedOutput
+    ? standardJsonSchema(guardedOutput, "output")
+    : undefined;
+
+  let listInput: Record<string, unknown>;
+  if (guardedInput) {
+    listInput = guardedInput;
+  } else {
+    const zodSchema = registrationInput as any;
+    const jsonSchema = zodSchema?.["~standard"]?.jsonSchema?.input?.({ target: "draft-2020-12" });
+    listInput = { type: "object", ...(jsonSchema || { properties: {} }) };
+  }
+
+  const compiled: CompiledToolSchemas = {
+    registrationInput,
+    registrationOutput,
+    listInput,
+    listOutput: guardedOutput,
+  };
+  toolSchemaCache.set(tool.name, compiled);
+  return compiled;
+}
+
 function registerToolWithExecution(
   server: McpServer,
   name: string,
@@ -82,14 +134,8 @@ function registerToolWithExecution(
 }
 
 function schemaForToolList(tool: ToolDefinition<unknown>, kind: "input" | "output"): Record<string, unknown> | undefined {
-  if (kind === "input" && tool.inputJsonSchema) return guardJsonSchema202012(tool.inputJsonSchema, "input");
-  if (kind === "output" && tool.outputSchema) return guardJsonSchema202012(tool.outputSchema, "output");
-  if (kind === "input") {
-    const schema = z.object(tool.inputSchema as any) as any;
-    const jsonSchema = schema?.["~standard"]?.jsonSchema?.input?.({ target: "draft-2020-12" });
-    return { type: "object", ...(jsonSchema || { properties: {} }) };
-  }
-  return undefined;
+  const c = getOrCompileToolSchemas(tool);
+  return kind === "input" ? c.listInput : c.listOutput;
 }
 
 export function registerToolListSurface<T>(server: McpServer, tools: ToolDefinition<T>[]): void {
@@ -170,18 +216,8 @@ export function registerMcpTool<T>(
   tool: ToolDefinition<T>,
   handler: (args: unknown, extra?: { signal?: AbortSignal }) => Promise<unknown>,
 ): void {
-  const inputJsonSchema = tool.inputJsonSchema
-    ? guardJsonSchema202012(tool.inputJsonSchema, "input")
-    : undefined;
-  const outputJsonSchema = tool.outputSchema
-    ? guardJsonSchema202012(tool.outputSchema, "output")
-    : undefined;
-  const inputSchema = inputJsonSchema
-    ? standardJsonSchema(inputJsonSchema, "input")
-    : z.object(tool.inputSchema as any);
-  const outputSchema = outputJsonSchema
-    ? standardJsonSchema(outputJsonSchema, "output")
-    : undefined;
+  const { registrationInput: inputSchema, registrationOutput: outputSchema } =
+    getOrCompileToolSchemas(tool as unknown as ToolDefinition<unknown>);
 
   registerToolWithExecution(
     server,

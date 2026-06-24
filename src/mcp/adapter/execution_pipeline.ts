@@ -348,7 +348,7 @@ export function registerTools<T = Record<string, unknown>>(
       continue;
     }
 
-    if (tool.requireConfidence) {
+    if (tool.requireConfidence && !("confidence_level" in tool.inputSchema)) {
       tool.inputSchema.confidence_level = z.number().min(0).max(1).describe("Độ tự tin của AI vào tính an toàn của tác vụ (0.0 đến 1.0)");
       tool.inputSchema.reasoning = z.string().describe("Giải thích chi tiết tại sao hành động này là an toàn và không gây hại hệ thống");
     }
