@@ -60,8 +60,8 @@ No Task tool → executing-plans. No TodoWrite → inline - [ ] checklist.
 
 **Knowledge**
 - `kb-query` — before "have we decided on X?". Never create duplicate ADR without checking.
-- `session-handoff` — khi session sắp kết thúc và task chưa xong. Commit trước khi close.
-- `audit-distill` — khi có VHEATM audit report. Extracts T1/T2 findings → Gotchas + pattern-debt + M.AT.
+- `session-handoff` — when the session is ending and task is not done. Commit before closing.
+- `audit-distill` — when a VHEATM audit report is available. Extracts T1/T2 findings → Gotchas + pattern-debt + M.AT.
 - `skill-init` — once per project. Creates docs/superskills/ structure.
 - `writing-super-skills` — before creating/editing any skill. RED baseline test first.
 - `framework-doctor` — before releasing/installing/modifying Super Skills itself.

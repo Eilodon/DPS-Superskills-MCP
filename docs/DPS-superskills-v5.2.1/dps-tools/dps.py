@@ -680,12 +680,12 @@ def render_index(model: DPSModel) -> str:
 
 def render_agents(model: DPSModel) -> str:
     dont_map = {
-        "design-review": "Không write implementation code",
-        "implementation": "Không redefine schema trong code",
-        "refactor": "Không rename/remove owner mà không update DPS",
-        "bugfix": "Không workaround rồi backfill spec sau",
-        "architecture-change": "Không change architecture trực tiếp trong code trước khi update/accept DPS decision",
-        "dependency-change": "Không add architecture-relevant dependency ngoài registry",
+        "design-review": "Do not write implementation code",
+        "implementation": "Do not redefine schema in code",
+        "refactor": "Do not rename/remove owner without updating DPS",
+        "bugfix": "Do not workaround and backfill spec later",
+        "architecture-change": "Do not change architecture directly in code before updating/accepting DPS decision",
+        "dependency-change": "Do not add architecture-relevant dependency outside registry",
     }
     rows = model.mode_routes or [
         ("design-review", "README Proof Handoff, BLUEPRINT Trace Index, ADR index"),
@@ -695,19 +695,19 @@ def render_agents(model: DPSModel) -> str:
         ("architecture-change", "SYSTEM INTENT, Scope Boundary Log, ADR template, Change Classification"),
         ("dependency-change", "BLUEPRINT Dependency Fitness, CONTRACTS External Contracts, relevant ADRs"),
     ]
-    table = ["| Mode | Load first | Không được làm |", "|---|---|---|"]
+    table = ["| Mode | Load first | Do not do |", "|---|---|---|"]
     for mode, load_first in rows:
-        table.append(f"| `{mode}` | {load_first} | {dont_map.get(mode, 'Không modify ngoài phạm vi mode nếu chưa update DPS canonical')} |")
+        table.append(f"| `{mode}` | {load_first} | {dont_map.get(mode, 'Do not modify outside mode scope without updating DPS canonical')} |")
     return generated_header("AGENTS.md - DPS agent behavior projection", "<!--") + f"""# AGENTS.md — DPS Agent Behavior Contract
 
-> Projection từ DPS canonical files. Không phải canonical truth. Nếu file này conflict với README.md / CONTRACTS.md / BLUEPRINT.md / ADR.md, canonical thắng.
+> Projection from DPS canonical files. Not canonical truth. If this file conflicts with README.md / CONTRACTS.md / BLUEPRINT.md / ADR.md, canonical wins.
 
 ## Mandatory first check
 
-1. Đọc `README.md` lifecycle status.
+1. Read `README.md` lifecycle status.
 2. Current DPS STATUS: `{model.meta.status}`.
-3. Nếu `DPS STATUS = DRAFT`, không implement production code. Chỉ được critique, ask for missing info, hoặc help promote to `PROOF-READY`.
-4. Nếu `.agent/` conflict với DPS canonical files, dừng và chạy `{TOOL_COMMAND} sync && {TOOL_COMMAND} check`.
+3. If `DPS STATUS = DRAFT`, do not implement production code. Only critique, ask for missing info, or help promote to `PROOF-READY`.
+4. If `.agent/` conflicts with DPS canonical files, stop and run `{TOOL_COMMAND} sync && {TOOL_COMMAND} check`.
 
 ## Mode routing
 
@@ -715,10 +715,10 @@ def render_agents(model: DPSModel) -> str:
 
 ## Output discipline
 
-- Mọi module boundary chính nên có DPS trace anchor.
-- Mọi deviation phải classify theo README Change Classification Protocol.
-- Phase gate không pass nếu Learning Loop chưa respond.
-- Sau mọi canonical change: chạy `{TOOL_COMMAND} sync` rồi `{TOOL_COMMAND} check`.
+- Every major module boundary should have a DPS trace anchor.
+- Every deviation must be classified according to README Change Classification Protocol.
+- Phase gate does not pass if Learning Loop has not responded.
+- After every canonical change: run `{TOOL_COMMAND} sync` then `{TOOL_COMMAND} check`.
 """
 
 def render_context(model: DPSModel) -> str:
@@ -734,7 +734,7 @@ def render_context(model: DPSModel) -> str:
             trace_lines.append("| " + " | ".join(r[:6]) + " |")
     return generated_header("CONTEXT.md - DPS compact context projection", "<!--") + f"""# CONTEXT.md — DPS Context Projection
 
-> Projection compact từ DPS cho agent context. Không phải canonical truth. Generated từ 4 canonical files.
+> Compact projection from DPS for agent context. Not canonical truth. Generated from 4 canonical files.
 
 ## Active lifecycle
 
@@ -1038,7 +1038,7 @@ def lint_model(root: Path, strict: bool = False, project_mode: bool = False) -> 
     adr_stripped = strip_fenced_code(adr_text)
 
     # Template wording consistency.
-    if re.search(r"\bBa files\b|\b3 files\b|CẢ 3 files", readme, re.IGNORECASE):
+    if re.search(r"\bThree files\b|\b3 files\b|ALL 3 files", readme, re.IGNORECASE):
         problems.append("README still uses 3-file wording; expected 4 canonical file wording.")
 
     # F8: live compatible-with header should exist in every canonical file.

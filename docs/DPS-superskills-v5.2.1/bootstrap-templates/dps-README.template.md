@@ -1,201 +1,201 @@
 # DPS — Design Proof Specification
 > **DPS VERSION:** `5.0-template`
-> **DPS PROFILE:** `DPS-Standard` *(chọn: `DPS-Lite` / `DPS-Standard` / `DPS-Critical`)*
-### {{TÊN_DỰ_ÁN}} · v{{VERSION}} · compatible with: [CONTRACTS v{{X}}, BLUEPRINT v{{Y}}, ADR v{{Z}}]
-> Specification đủ chính xác để tạo **proof-ready pre-code architecture artifact** —
-> sau đó promote thành **implementation SSOT** và sống tiếp như **living spec** của dự án.
+> **DPS PROFILE:** `DPS-Standard` *(choose: `DPS-Lite` / `DPS-Standard` / `DPS-Critical`)*
+### {{PROJECT_NAME}} · v{{VERSION}} · compatible with: [CONTRACTS v{{X}}, BLUEPRINT v{{Y}}, ADR v{{Z}}]
+> Specification precise enough to create a **proof-ready pre-code architecture artifact** —
+> then promoted to an **implementation SSOT** and lives on as the **living spec** of the project.
 
 
-> **DPS STATUS:** `DRAFT` *(chọn: `DRAFT` / `PROOF-READY` / `APPROVED-SSOT` / `IMPLEMENTATION-ACTIVE` / `LIVING-SPEC` / `SUPERSEDED`)*
+> **DPS STATUS:** `DRAFT` *(choose: `DRAFT` / `PROOF-READY` / `APPROVED-SSOT` / `IMPLEMENTATION-ACTIVE` / `LIVING-SPEC` / `SUPERSEDED`)*
 > **PROMOTED BY:** {{WHO}} · **PROMOTED AT:** {{YYYY-MM-DD}}
 > **PROMOTION BASIS:** {{review / stress-test / spike / audit / validation evidence}}
-> **CURRENT AUTHORITY:** `DPS` *(default template value)* — nếu không phải `DPS`, ghi rõ lý do và phạm vi.
+> **CURRENT AUTHORITY:** `DPS` *(default template value)* — if not `DPS`, state the reason and scope.
 >
-> **Rule:** `DRAFT` chưa được dùng làm source để agent implement. Chỉ `APPROVED-SSOT`, `IMPLEMENTATION-ACTIVE`, hoặc `LIVING-SPEC` mới là implementation authority.
+> **Rule:** `DRAFT` must not be used as an implementation source for agents. Only `APPROVED-SSOT`, `IMPLEMENTATION-ACTIVE`, or `LIVING-SPEC` hold implementation authority.
 ---
 
 ## Four canonical files, four responsibilities
 
-| File | Trả lời câu hỏi | Dùng khi | Ownership |
+| File | Answers the question | When to use | Ownership |
 |---|---|---|---|
-| `README.md` | **Theo luật nào?** — Lifecycle, governance, promotion, sync policy | Promote DPS; audit process; route agents | Governance canonical |
-| `CONTRACTS.md` | **Cái gì?** — Types, schemas, I/O contracts | Thiết kế data model; spot type bugs; generate types/interfaces | Contract canonical |
-| `BLUEPRINT.md` | **Như thế nào?** — Behavior, pseudocode, state machine | Implement logic; verify correctness; generate code | Behavior canonical |
-| `ADR.md` | **Tại sao?** — Decisions, alternatives, trade-offs | Iterate architecture; onboard người mới; review với team | Decision canonical |
+| `README.md` | **According to what rules?** — Lifecycle, governance, promotion, sync policy | Promote DPS; audit process; route agents | Governance canonical |
+| `CONTRACTS.md` | **What?** — Types, schemas, I/O contracts | Design data model; spot type bugs; generate types/interfaces | Contract canonical |
+| `BLUEPRINT.md` | **How?** — Behavior, pseudocode, state machine | Implement logic; verify correctness; generate code | Behavior canonical |
+| `ADR.md` | **Why?** — Decisions, alternatives, trade-offs | Iterate architecture; onboard newcomers; review with team | Decision canonical |
 
-> **Canonical ownership rule:** Chỉ 4 file trên được sửa tay. `DPS_INDEX.yml`, `.agent/*`, và `.dps/DPS_LOCK.yml` là generated sidecars. Nếu sidecar conflict với canonical, canonical thắng và phải chạy lại `./tools/dps.py sync`.
+> **Canonical ownership rule:** Only the 4 files above are manually edited. `DPS_INDEX.yml`, `.agent/*`, and `.dps/DPS_LOCK.yml` are generated sidecars. If a sidecar conflicts with a canonical file, the canonical file wins and you must re-run `./tools/dps.py sync`.
 
 ---
 
-## Hai Arcs của DPS
+## The Two Arcs of DPS
 
-**Arc 1 — Proof at t=0:** *"Design này có đúng không tại thời điểm viết?"*
+**Arc 1 — Proof at t=0:** *"Is this design correct at the time of writing?"*
 
-Arc 1 chạy một lần. CONTRACTS.md, BLUEPRINT.md, ADR.md đều phục vụ Arc 1 — biến intent ban đầu thành artifact gần-code, đủ cụ thể để đem đi proof/stress-test trước khi build. DPS **không prescribe method prove**; nó tạo object đủ rõ để người/tool/AI kiểm chứng.
+Arc 1 runs once. CONTRACTS.md, BLUEPRINT.md, and ADR.md all serve Arc 1 — turning initial intent into near-code artifacts, specific enough to proof/stress-test before building. DPS **does not prescribe the proof method**; it creates objects clear enough for humans/tools/AI to verify.
 
-**Arc 2 — Living Proof (t > 0):** *"Design này còn đúng không sau khi implementation bắt đầu?"*
+**Arc 2 — Living Proof (t > 0):** *"Is this design still correct after implementation has begun?"*
 
-Arc 2 chạy liên tục. Bốn mechanisms giữ proof validity theo thời gian — và chúng có dependency order:
+Arc 2 runs continuously. Four mechanisms maintain proof validity over time — and they have a dependency order:
 
-| Mechanism | File | Trả lời | Dependency |
+| Mechanism | File | Answers | Dependency |
 |---|---|---|---|
-| Confidence & Volatility | `ADR.md` | Phần nào của proof cần thêm evidence? | Phải tồn tại trước khi Learning Loop có gì để update |
-| Learning Loop | `BLUEPRINT.md` Section 8 | Proof cần update gì khi implementation reveal new info? | Phải chạy trước khi Spec Health Signals có gì để check |
-| Spec Health Signals | README.md (DPS Maintenance Cadence) | Proof có đang drift khỏi reality không? | Depends on Confidence tags từ ADR |
-| Scope Boundary Log | `BLUEPRINT.md` Section 1 | Bài toán cần prove có tự thay đổi không? | Orthogonal — độc lập nhưng kết nối qua IMPACT RADIUS |
+| Confidence & Volatility | `ADR.md` | Which part of the proof needs more evidence? | Must exist before the Learning Loop has anything to update |
+| Learning Loop | `BLUEPRINT.md` Section 8 | What needs to be updated in the proof when implementation reveals new info? | Must run before Spec Health Signals have anything to check |
+| Spec Health Signals | README.md (DPS Maintenance Cadence) | Is the proof drifting away from reality? | Depends on Confidence tags from ADRs |
+| Scope Boundary Log | `BLUEPRINT.md` Section 1 | Is the problem being proven changing on its own? | Orthogonal — independent but connected via IMPACT RADIUS |
 
-> **Test mọi Arc 2 mechanism:** *"Cơ chế này có giúp maintain proof validity theo thời gian không?"*
-> Nếu không → không cần thiết, dù intellectually interesting đến đâu.
+> **Test every Arc 2 mechanism:** *"Does this mechanism help maintain proof validity over time?"*
+> If not → it is unnecessary, no matter how intellectually interesting it is.
 
-Arc 1 chạy một lần. Arc 2 chạy liên tục. Arc 1 tạo proof-ready target portrait tại t=0. Arc 2 maintain validity của portrait đó khi thời gian trôi và implementation làm lộ ra thực tế.
+Arc 1 runs once. Arc 2 runs continuously. Arc 1 creates a proof-ready target portrait at t=0. Arc 2 maintains the validity of that portrait as time passes and implementation exposes reality.
 
 ---
 
-## DPS Lifecycle Status — từ intent đến living spec
+## DPS Lifecycle Status — from intent to living spec
 
-DPS không phải một document tĩnh. Một DPS artifact đi qua các trạng thái sống sau:
+DPS is not a static document. A DPS artifact goes through the following living states:
 
-| Status | Ý nghĩa | Ai được dùng? | Gate để chuyển tiếp |
+| Status | Meaning | Who can use it? | Gate for transition |
 |---|---|---|---|
-| `DRAFT` | Đang cụ thể hóa intent; còn thiếu hoặc chưa được stress-test | Researcher / architect | Điền đủ intent, contracts, blueprint, ADR tối thiểu |
-| `PROOF-READY` | Đủ cụ thể để đem đi proof/stress-test gần như code | Reviewer / auditor / AI critique tool | Proof Handoff targets được kiểm tra và blockers được resolve |
-| `APPROVED-SSOT` | Đã pass review/stress-test; trở thành source of truth để implement | Dev / coding agent / reviewer | Promotion Basis được ghi rõ; known risks được accept hoặc resolve |
-| `IMPLEMENTATION-ACTIVE` | Đang được implement theo Section 8 build phases | Dev / coding agent | Phase gates + Learning Loop chạy liên tục |
-| `LIVING-SPEC` | Đã có reality feedback; spec phản ánh implementation, metrics, incidents, changes | Team / maintainer / agent | Arc 2 cadence vận hành; stale evidence được update |
-| `SUPERSEDED` | Không còn là active truth | Chỉ dùng để tra lịch sử | Có pointer đến DPS/ADR thay thế |
+| `DRAFT` | Specifying intent; missing parts or untested | Researcher / architect | Fill in intent, contracts, blueprint, minimal ADRs |
+| `PROOF-READY` | Concrete enough to proof/stress-test almost like code | Reviewer / auditor / AI critique tool | Proof Handoff targets checked and blockers resolved |
+| `APPROVED-SSOT` | Passed review/stress-test; becomes the single source of truth for implementation | Dev / coding agent / reviewer | Promotion Basis documented; known risks accepted or resolved |
+| `IMPLEMENTATION-ACTIVE` | Being implemented according to Section 8 build phases | Dev / coding agent | Phase gates + Learning Loop running continuously |
+| `LIVING-SPEC` | Has reality feedback; spec reflects implementation, metrics, incidents, changes | Team / maintainer / agent | Arc 2 cadence operational; stale evidence updated |
+| `SUPERSEDED` | No longer the active truth | For historical reference only | Points to the replacing DPS/ADR |
 
 ### Promotion Gate
 
-> **Promotion moment:** DPS chỉ được promote từ `PROOF-READY` sang `APPROVED-SSOT` khi các blockers trong Proof Handoff đã được xử lý hoặc explicitly accepted.
-> Không feed DPS `DRAFT` cho coding agent như implementation authority.
+> **Promotion moment:** DPS is only promoted from `PROOF-READY` to `APPROVED-SSOT` when the blockers in the Proof Handoff have been addressed or explicitly accepted.
+> Do not feed a `DRAFT` DPS to a coding agent as implementation authority.
 
 ---
 
-## Nguyên tắc cốt lõi
+## Core Principles
 
 **1. Single definition**
-Mọi type/schema được define **một lần duy nhất** trong CONTRACTS.md.
-BLUEPRINT.md chỉ `Ref<SchemaName>` — không redefine, không copy.
-Đây là điều ngăn `CategoryScore`-class bugs.
+Every type/schema is defined **exactly once** in CONTRACTS.md.
+BLUEPRINT.md only uses `Ref<SchemaName>` — no redefinition, no copying.
+This prevents `CategoryScore`-class bugs.
 
 **2. Explicit references**
-Khi BLUEPRINT.md cần một schema, nó viết `Ref<SchemaName>`.
-Khi hai nơi dùng cùng tên → đảm bảo chúng reference cùng một definition.
+When BLUEPRINT.md needs a schema, it writes `Ref<SchemaName>`.
+When two places use the same name → ensure they reference the same definition.
 
-**3. Pseudocode là contract**
-Pseudocode trong BLUEPRINT.md đủ chi tiết để agent implement mà không hỏi thêm.
-Nếu agent vẫn cần hỏi → pseudocode chưa đủ detail.
+**3. Pseudocode is a contract**
+Pseudocode in BLUEPRINT.md is detailed enough for an agent to implement without asking questions.
+If an agent still needs to ask → the pseudocode lacks detail.
 
-**4. ADR là memory**
-Mọi quyết định "trông có vẻ lạ" đều có ADR giải thích.
-Khi muốn thay đổi design → đọc ADR trước để hiểu tại sao design hiện tại lại như vậy.
+**4. ADR is memory**
+Every "weird looking" decision has an ADR explaining it.
+When you want to change the design → read the ADR first to understand why the current design is what it is.
 
 **5. Lifecycle authority**
-DPS có authority khác nhau theo status. `DRAFT` dùng để think; `APPROVED-SSOT` dùng để build; `LIVING-SPEC` dùng để maintain.
-Nếu status không đủ authority cho hành động hiện tại → không tiếp tục, phải promote hoặc reconcile trước.
+DPS has varying authority based on status. `DRAFT` is for thinking; `APPROVED-SSOT` is for building; `LIVING-SPEC` is for maintaining.
+If the status does not carry enough authority for the current action → do not proceed, promote or reconcile first.
 
 ---
 
 ## DPS Profiles
 
-Không phải project nào cũng cần full DPS cùng mức ceremony. Chọn profile trước khi viết spec.
+Not every project requires a full DPS with the highest level of ceremony. Choose a profile before writing the spec.
 
-| Profile | Dùng khi | Bắt buộc tối thiểu |
+| Profile | When to use | Minimum Requirements |
 |---|---|---|
-| `DPS-Lite` | Prototype nghiêm túc / solo builder / spike có thể sống tiếp | SYSTEM INTENT, SUCCESS CRITERIA, schemas chính, 1-2 ADR, build phases |
-| `DPS-Standard` | Product feature / internal system / multi-agent implementation | Full 4 canonical files, lifecycle status, smell checklist, Learning Loop, Trace Index |
-| `DPS-Critical` | Payment, compliance, data loss, outage, revenue-blocking systems | Full Standard + System Invariants, Dependency Fitness, Proof Handoff sign-off, trace anchors |
+| `DPS-Lite` | Serious prototypes / solo builders / spikes that might live on | SYSTEM INTENT, SUCCESS CRITERIA, main schemas, 1-2 ADRs, build phases |
+| `DPS-Standard` | Product features / internal systems / multi-agent implementations | Full 4 canonical files, lifecycle status, smell checklist, Learning Loop, Trace Index |
+| `DPS-Critical` | Payments, compliance, data loss prevention, outages, revenue-blocking systems | Full Standard + System Invariants, Dependency Fitness, Proof Handoff sign-off, trace anchors |
 
-> Profile thấp hơn không được dùng làm excuse để bỏ qua conflict rõ ràng. Profile chỉ giảm ceremony, không giảm correctness.
+> Lower profiles must not be used as an excuse to ignore obvious conflicts. A profile only reduces ceremony, not correctness.
 
 ---
 
 ## Workflow
 
-### Khi thiết kế (research mode)
+### When designing (research mode)
 
 ```
-1. ADR.md       — brainstorm options, cân nhắc trade-offs
-2. CONTRACTS.md — define schemas từ decision đã chốt
-3. BLUEPRINT.md — specify behavior dùng schemas đó
-4. Loop: phát hiện issue ở BLUEPRINT → update CONTRACTS → update ADR nếu cần
+1. ADR.md       — brainstorm options, weigh trade-offs
+2. CONTRACTS.md — define schemas from finalized decisions
+3. BLUEPRINT.md — specify behavior using those schemas
+4. Loop: find an issue in BLUEPRINT → update CONTRACTS → update ADR if needed
 ```
 
-### Khi generate code (build mode)
+### When generating code (build mode)
 
 ```
-Agent đọc theo thứ tự:
-1. CONTRACTS.md  → có full type system
-2. BLUEPRINT.md  → có full behavior spec
-3. BLUEPRINT.md Section 8 → có build order
+Agents read in this order:
+1. CONTRACTS.md  → contains the full type system
+2. BLUEPRINT.md  → contains full behavior spec
+3. BLUEPRINT.md Section 8 → contains the build order
 
-Agent implement theo Phase order trong Section 8.
-Không bắt đầu phase N+1 khi chưa pass gate của phase N.
+Agents implement following Phase order in Section 8.
+Do not start phase N+1 before passing the gate of phase N.
 ```
 
-### Khi iterate architecture
+### When iterating architecture
 
 ```
-0. Trước khi bắt đầu: đọc lại SYSTEM INTENT block trong BLUEPRINT.md Section 1.
-   Câu hỏi: "Quyết định tôi sắp document có align với PROBLEM và ASSUMING không?"
-   Nếu không: change này có thể là response đến Intent Drift, không phải technical refinement
-   → xem Trigger 0 trong DPS Maintenance Cadence bên dưới.
+0. Before starting: re-read the SYSTEM INTENT block in BLUEPRINT.md Section 1.
+   Question: "Does the decision I am about to document align with the PROBLEM and ASSUMING statements?"
+   If not: this change might be a response to Intent Drift, not technical refinement
+   → see Trigger 0 in the DPS Maintenance Cadence below.
 
-1. Tạo ADR mới với status PROPOSED
-2. Liệt kê options, pros/cons
-3. Chốt → update status ACCEPTED
-4. Update CONTRACTS.md nếu schema thay đổi (ghi vào Schema Changelog)
-5. Update BLUEPRINT.md nếu behavior thay đổi
-6. Nếu scope của bài toán thay đổi → append entry vào Scope Boundary Log
-   (BLUEPRINT.md Section 1) với Impact ADRs và Review Status
-7. Breaking change → bump version ở cả 4 canonical files (xem Version Sync Rule bên dưới)
+1. Create a new ADR with status PROPOSED
+2. List options, pros/cons
+3. Finalize → update status to ACCEPTED
+4. Update CONTRACTS.md if schema changes (log in Schema Changelog)
+5. Update BLUEPRINT.md if behavior changes
+6. If the scope of the problem changes → append an entry to the Scope Boundary Log
+   (BLUEPRINT.md Section 1) with Impact ADRs and Review Status
+7. Breaking change → bump the version across all 4 canonical files (see Version Sync Rule below)
 ```
 
 ### Spec-is-Primary Rule
 
 ```
-DPS là SSOT. Khi implementation conflict với spec — spec thắng.
+DPS is the SSOT. When implementation conflicts with spec — spec wins.
 
-Khi phát hiện conflict:
-  1. Dừng implement
-  2. Quyết định: spec đúng hay reality đúng?
-     ├─ Spec đúng  → fix code
-     └─ Reality đúng → update DPS trước (CONTRACTS / BLUEPRINT / ADR nếu cần)
-  3. Tiếp tục implement theo spec đã được reconcile
+When detecting a conflict:
+  1. Stop implementing
+  2. Decide: is the spec correct or is reality correct?
+     ├─ Spec is correct  → fix code
+     └─ Reality is correct → update DPS first (CONTRACTS / BLUEPRINT / ADR as needed)
+  3. Continue implementing following the reconciled spec
 
-KHÔNG implement workaround rồi "backfill spec sau" — backfill không xảy ra.
-Phase gate trong Section 8 không pass nếu spec không phản ánh reality.
+DO NOT implement a workaround and say "I'll backfill the spec later" — backfills never happen.
+The phase gate in Section 8 does not pass if the spec does not reflect reality.
 ```
 
 
 ### Change Classification Protocol
 
-Trước khi sửa DPS hoặc code khi gặp conflict, classify loại change. Không classify → không sửa.
+Before modifying DPS or code upon encountering a conflict, classify the change. No classification → no modification.
 
-| Loại | Khi nào dùng | Action bắt buộc |
+| Type | When to use | Mandatory Action |
 |---|---|---|
-| `IMPLEMENTATION BUG` | Code sai so với DPS đang là authority | Fix code; DPS không đổi |
-| `SPEC BUG` | DPS thiếu/sai/mâu thuẫn nhưng decision gốc không đổi | Update CONTRACTS/BLUEPRINT; ghi SPEC NOTE hoặc changelog nếu cần |
-| `DESIGN CHANGE` | Approach/architecture decision thay đổi | Tạo ADR mới hoặc supersede ADR cũ; cascade review Impact Radius |
-| `INTENT DRIFT` | PROBLEM/FOR/ASSUMING/WILL_DRIFT_IF thay đổi | Update SYSTEM INTENT + Scope Boundary Log; review impacted ADRs |
-| `EXTERNAL CONSTRAINT CHANGE` | Library/API/vendor/regulation/platform constraint thay đổi | Update External Contract / Dependency Fitness / ADR Confidence |
+| `IMPLEMENTATION BUG` | Code is wrong compared to the active DPS authority | Fix code; DPS remains unchanged |
+| `SPEC BUG` | DPS is missing/wrong/contradictory, but original decision holds | Update CONTRACTS/BLUEPRINT; add SPEC NOTE or changelog entry if needed |
+| `DESIGN CHANGE` | Approach/architecture decision changed | Create new ADR or supersede old ADR; cascade review Impact Radius |
+| `INTENT DRIFT` | PROBLEM/FOR/ASSUMING/WILL_DRIFT_IF changed | Update SYSTEM INTENT + Scope Boundary Log; review impacted ADRs |
+| `EXTERNAL CONSTRAINT CHANGE` | Library/API/vendor/regulation/platform constraint changed | Update External Contract / Dependency Fitness / ADR Confidence |
 
-> Nếu không chắc thuộc loại nào: treat như `SPEC BUG` tạm thời, ghi SPEC NOTE, và không advance phase gate cho đến khi Learning Loop respond.
+> If unsure what type: treat as `SPEC BUG` temporarily, log a SPEC NOTE, and do not advance the phase gate until the Learning Loop responds.
 
 ### Version Sync Rule
 
 ```
-Breaking change ở bất kỳ file nào  →  bump MAJOR version cả 4 canonical files cùng lúc.
-Non-breaking addition               →  bump minor version file đó + ghi vào Schema Changelog.
+Breaking change in any file  →  bump MAJOR version across all 4 canonical files simultaneously.
+Non-breaking addition        →  bump minor version of that file + log in Schema Changelog.
 
-Header của mỗi file phải ghi:
+Header of each file must read:
   v{{VERSION}} · compatible with: [CONTRACTS v{{X}}, BLUEPRINT v{{Y}}, ADR v{{Z}}]
 
-"Breaking change" bao gồm:
-  - Xóa hoặc rename field/schema trong CONTRACTS.md
-  - Thay đổi operation signature hoặc pre/post-conditions trong BLUEPRINT.md
-  - ADR SUPERSEDED dẫn đến thay đổi behavior đang hoạt động
-  - Scope Boundary Log entry làm impact nhiều ADRs và Review Status còn Pending
+"Breaking changes" include:
+  - Deleting or renaming a field/schema in CONTRACTS.md
+  - Changing an operation signature or pre/post-conditions in BLUEPRINT.md
+  - ADR SUPERSEDED leading to a change in active behavior
+  - Scope Boundary Log entry impacting multiple ADRs where Review Status is still Pending
 ```
 
 ---
@@ -204,7 +204,7 @@ Header của mỗi file phải ghi:
 
 ### Sync-Enforced Sidecars
 
-Sidecars tồn tại để agent/tool đọc nhanh, nhưng không phải canonical truth.
+Sidecars exist for agents/tools to read quickly, but they are not the canonical truth.
 
 **Generated outputs:**
 
@@ -219,7 +219,7 @@ DPS_INDEX.yml
 .dps/DPS_LOCK.yml
 ```
 
-**Rule:** không sửa tay các file generated. Mọi thay đổi phải đi theo pipeline:
+**Rule:** do not manually edit generated files. All changes must go through the pipeline:
 
 ```bash
 # 1. Edit only canonical DPS files
@@ -233,25 +233,25 @@ $EDITOR README.md CONTRACTS.md BLUEPRINT.md ADR.md
 ./tools/dps.py lint --strict
 ```
 
-`./tools/dps.py check` phải fail nếu:
+`./tools/dps.py check` must fail if:
 
-- canonical metadata lệch giữa 4 files;
-- `Ref<X>` không resolve về schema trong `CONTRACTS.md`;
-- ADR reference không tồn tại trong `ADR.md`;
-- generated sidecar bị sửa tay hoặc chưa regenerate;
-- `.dps/DPS_LOCK.yml` không khớp canonical/generated hashes.
+- canonical metadata drifts across the 4 files;
+- `Ref<X>` does not resolve to a schema in `CONTRACTS.md`;
+- ADR reference does not exist in `ADR.md`;
+- a generated sidecar has been manually edited or hasn't been regenerated;
+- `.dps/DPS_LOCK.yml` does not match the canonical/generated hashes.
 
-**Template mode vs project mode:** blank template được phép còn `{{placeholder}}` và `DRAFT`. Khi instantiate thành DPS thật, dùng thêm:
+**Template mode vs project mode:** the blank template is allowed to contain `{{placeholder}}`s and `DRAFT`. When instantiating it as an actual project DPS, run with:
 
 ```bash
 ./tools/dps.py lint --strict --project-mode
 ```
 
-Project mode sẽ fail nếu còn placeholder hoặc DPS vẫn là `DRAFT`.
+Project mode will fail if placeholders remain or if the DPS is still `DRAFT`.
 
 ### Stable ID markers for deterministic extraction
 
-Parser ưu tiên stable markers nếu có; nếu chưa có marker, tool fallback về heading/table heuristics. Khi instantiate project thật, nên thêm marker cho entity quan trọng để giảm ambiguity khi rename heading.
+The parser prioritizes stable markers if they exist; if there are no markers, the tool falls back to heading/table heuristics. When instantiating a real project, consider adding markers to important entities to reduce ambiguity when headings are renamed.
 
 ```md
 <!-- dps:id=schema.UserProfile -->
@@ -273,10 +273,10 @@ Parser ưu tiên stable markers nếu có; nếu chưa có marker, tool fallback
 <!-- dps:type=adr -->
 ```
 
-Stable ID là contract với tooling. Đổi title/heading được, nhưng đổi `dps:id` là breaking change và cần ADR nếu đã dùng trong implementation.
+Stable IDs are a contract with the tooling. Changing a title/heading is fine, but changing a `dps:id` is a breaking change and requires an ADR if it is already in use by the implementation.
 
 
-DPS là canonical source. `.agent/` chỉ là generated projection giúp coding agent load context đúng mode mà không phải đọc toàn bộ spec mọi lúc.
+DPS is the canonical source. `.agent/` is merely a generated projection that helps coding agents load correct context based on their mode without having to read the entire spec every time.
 
 ```
 DPS/                       ← Hand-editable canonical truth
@@ -289,11 +289,11 @@ Generated sidecars          ← Never edit by hand
   DPS_INDEX.yml             Machine-readable index
   .agent/AGENTS.md          Agent behavior contract
   .agent/CONTEXT.md         Compressed active truth
-  .agent/INVARIANTS.md      Extract từ CONTRACTS Section 3.X
-  .agent/STACK.md           Extract từ Dependency Fitness Registry
-  .agent/TASKS.md           Extract từ BLUEPRINT Section 8
-  .agent/REVIEW_CHECKS.md   Extract từ README Smell Indicators
-  .dps/DPS_LOCK.yml         Hash lock chống drift
+  .agent/INVARIANTS.md      Extracted from CONTRACTS Section 3.X
+  .agent/STACK.md           Extracted from Dependency Fitness Registry
+  .agent/TASKS.md           Extracted from BLUEPRINT Section 8
+  .agent/REVIEW_CHECKS.md   Extracted from README Smell Indicators
+  .dps/DPS_LOCK.yml         Hash lock against drift
 
 Tooling
   tools/dps.py              sync / check / lint / doctor
@@ -303,9 +303,9 @@ Tooling
   .github/workflows/        CI gate
 ```
 
-**Load profile theo mode:**
+**Load profile by mode:**
 
-| Agent mode | Agent phải đọc trước khi sửa code |
+| Agent mode | Agent must read before modifying code |
 |---|---|
 | `design-review` | README lifecycle + Proof Handoff + ADR index + Trace Index |
 | `implementation` | CONTRACTS → BLUEPRINT Section 5/8 → relevant ADRs |
@@ -314,74 +314,74 @@ Tooling
 | `architecture-change` | SYSTEM INTENT → Scope Boundary Log → ADR template → Change Classification |
 | `dependency-change` | Dependency Fitness Registry → External Contracts → relevant ADRs |
 
-> Projection rule: nếu `.agent/` hoặc `DPS_INDEX.yml` conflict với canonical DPS, canonical thắng. Sau khi canonical đổi, chạy `./tools/dps.py sync && ./tools/dps.py check` trước khi agent tiếp tục implement.
+> Projection rule: if `.agent/` or `DPS_INDEX.yml` conflicts with canonical DPS, the canonical file wins. After canonical changes, run `./tools/dps.py sync && ./tools/dps.py check` before the agent continues implementing.
 
 ---
 
 ## DPS Maintenance Cadence
 
-DPS có hai loại triggers — event-based (embedded trong các files) và time-based (section này).
-Time-based triggers là Arc 2 mechanism để phát hiện proof drift trước khi nó trở thành blindside.
-Đây là governance content, không phải spec content — nên chúng sống ở README, không phải BLUEPRINT hay CONTRACTS.
+DPS has two types of triggers — event-based (embedded within the files) and time-based (this section).
+Time-based triggers are an Arc 2 mechanism for detecting proof drift before it becomes a blindside.
+This is governance content, not spec content — so it belongs in the README, not BLUEPRINT or CONTRACTS.
 
 ### Trigger 0 — System Intent drift *(introduced in v4, retained in v5)*
 
-Nếu bất kỳ condition nào trong `WILL_DRIFT_IF` của BLUEPRINT.md Section 1 (SYSTEM INTENT block)
-đã xảy ra → toàn bộ DPS cần re-evaluation, không chỉ impacted ADRs.
-Track qua Scope Boundary Log (BLUEPRINT.md Section 1) — nhưng note rõ đây là **INTENT DRIFT**,
-không phải ordinary scope change. INTENT DRIFT = assumption về bài toán đã sai, không chỉ scope mở rộng.
+If any condition in `WILL_DRIFT_IF` of BLUEPRINT.md Section 1 (SYSTEM INTENT block)
+has occurred → the entire DPS requires re-evaluation, not just impacted ADRs.
+Track this via the Scope Boundary Log (BLUEPRINT.md Section 1) — but clearly note that this is **INTENT DRIFT**,
+not an ordinary scope change. INTENT DRIFT = the underlying assumption about the problem is wrong, not just an expanding scope.
 
 ### ⚠️ Arc 2 Realism Warning
 
-Arc 2 có hai tiers với dependency khác nhau vào tooling:
+Arc 2 has two tiers with different dependencies on tooling:
 
-- **Tier 1 — không cần tooling:** Trigger 0, Trigger 1, Trigger 2, Alert → Confidence cascade.
-  Đây là **minimum viable Arc 2** — chỉ cần team discipline.
-- **Tier 2 — cần tooling:** Trigger 3, Trigger 4.
-  **Không có tooling → Tier 2 là aspirational, không phải operative.**
-  Accept risk này explicitly, hoặc compensate bằng frequency cao hơn của Tier 1 checks.
+- **Tier 1 — no tooling required:** Trigger 0, Trigger 1, Trigger 2, Alert → Confidence cascade.
+  This is the **minimum viable Arc 2** — requiring only team discipline.
+- **Tier 2 — tooling required:** Trigger 3, Trigger 4.
+  **Without tooling → Tier 2 is aspirational, not operative.**
+  Explicitly accept this risk, or compensate with a higher frequency of Tier 1 checks.
 
-> **Recommendation:** Với team mới dùng DPS, chỉ commit vào Tier 1 trước.
-> Add Tier 2 khi tooling sẵn sàng. Đừng pretend Tier 2 active khi tooling chưa có.
+> **Recommendation:** For teams new to DPS, only commit to Tier 1 initially.
+> Add Tier 2 when tooling is ready. Do not pretend Tier 2 is active when tooling is missing.
 
-### Tier 1: Triggers implementable ngay (không cần tooling)
+### Tier 1: Immediately implementable triggers (no tooling required)
 
 **Trigger 1 — External Contract stale**
-Nếu `Last verified` trong CONTRACTS.md Section 6 > 3 tháng → schedule re-verification với team sở hữu service đó.
-Nếu behavior thay đổi → update Confidence tag trong ADR liên quan.
+If `Last verified` in CONTRACTS.md Section 6 > 3 months → schedule a re-verification with the team owning that service.
+If behavior has changed → update the Confidence tag in the relevant ADR.
 
-**Trigger 2 — ADR SUPERSEDED chưa trigger cascade review**
-Khi ADR bị SUPERSEDED → toàn bộ IMPACT RADIUS của ADR đó phải được review.
-Track qua field **Cascade Review** trong IMPACT RADIUS block của ADR đó (ADR.md).
-Nếu `Cascade Review: 🔄 Pending` → phase gate không được advance.
+**Trigger 2 — ADR SUPERSEDED has not triggered cascade review**
+When an ADR is SUPERSEDED → the entire IMPACT RADIUS of that ADR must be reviewed.
+Track this via the **Cascade Review** field in the IMPACT RADIUS block of that ADR (ADR.md).
+If `Cascade Review: 🔄 Pending` → the phase gate cannot be advanced.
 
-> **Lưu ý:** Scope Boundary Log (BLUEPRINT.md Section 1) track scope *changes*, không phải ADR superseded events —
-> đây là hai trigger khác nhau. Trigger 2 belongs to ADR.md, không phải BLUEPRINT.md.
+> **Note:** The Scope Boundary Log (BLUEPRINT.md Section 1) tracks scope *changes*, not ADR superseded events —
+> these are two different triggers. Trigger 2 belongs to ADR.md, not BLUEPRINT.md.
 
-### Tier 2: Triggers cần tooling — Aspirational (chỉ operative khi tooling sẵn sàng)
+### Tier 2: Triggers requiring tooling — Aspirational (operative only when tooling is ready)
 
 **Trigger 3 — Implementation drift from spec**
-Signal: git history của implementation file thay đổi nhiều lần mà spec file không đổi → potential spec drift.
-Format tracking: thêm `Last synced: {{YYYY-MM-DD}}` vào component spec header trong BLUEPRINT Section 5.
+Signal: git history of the implementation file has changed multiple times but the spec file has not → potential spec drift.
+Format tracking: add `Last synced: {{YYYY-MM-DD}}` to the component spec header in BLUEPRINT Section 5.
 
 **Trigger 4 — Test file divergence**
-Signal: test file cho component STRICT/CRITICAL không có test cases khớp failure-condition tests trong Section 5.
-Format tracking: thêm "Test file" column vào Component Registry khi tooling sẵn sàng.
+Signal: the test file for a STRICT/CRITICAL component lacks test cases that match the failure-condition tests in Section 5.
+Format tracking: add a "Test file" column to the Component Registry once tooling is available.
 
 ### Alert → Confidence cascade
 
-Khi alert threshold trong BLUEPRINT.md Section 9 Metrics bị breach liên tục — đây là cầu nối giữa Arc 1 (Observability) và Arc 2 (Health). Breach pattern = operational evidence rằng một assumption trong ADR đang sai.
+When an alert threshold in BLUEPRINT.md Section 9 Metrics is breached repeatedly — this forms the bridge between Arc 1 (Observability) and Arc 2 (Health). A breach pattern = operational evidence that an assumption in an ADR is wrong.
 
 ```
-Alert breach liên tục
+Frequent alert breaches
   │
   ▼
-Tra Metrics table → cột ADR Ref → tìm ADR liên quan
+Look up Metrics table → ADR Ref column → find relevant ADR
   │
   ▼
-Re-evaluate Confidence tag trong ADR đó:
-  ├─ Assumption còn đúng → update WATCH SIGNAL / VALIDATION TARGET trong ADR
-  └─ Assumption sai     → downgrade Confidence → tạo ADR mới nếu cần thay đổi decision
+Re-evaluate Confidence tag in that ADR:
+  ├─ Assumption still holds → update WATCH SIGNAL / VALIDATION TARGET in the ADR
+  └─ Assumption is wrong    → downgrade Confidence → create new ADR if a decision change is needed
 ```
 
 ---
@@ -389,18 +389,18 @@ Re-evaluate Confidence tag trong ADR đó:
 
 ## Proof Handoff Interface
 
-DPS không quy định phải prove/stress-test bằng cách nào. Section này chỉ xác định **các bề mặt cần bị kiểm chứng** trước khi promote `PROOF-READY` → `APPROVED-SSOT`.
+DPS does not dictate how to prove/stress-test a design. This section only specifies the **surfaces that must be verified** before promoting `PROOF-READY` → `APPROVED-SSOT`.
 
-| Target | Ref | Vì sao cần stress-test | Expected evidence | Blocking? |
+| Target | Ref | Why it needs stress-testing | Expected evidence | Blocking? |
 |---|---|---|---|---|
-| Intent coherence | BLUEPRINT Section 1 | Nếu intent sai, toàn bộ target portrait sai | Domain review / PRD check / stakeholder review | CÓ |
-| Contract consistency | CONTRACTS Section 3-5 | Schema/I/O conflict sẽ cascade vào code | Manual audit / type model / linter / AI critique | CÓ |
-| Component traceability | BLUEPRINT Section 2 + ADR.md | Component không có origin dễ thành scope creep | ADR Origin coverage review | CÓ |
-| Behavior determinism | BLUEPRINT Section 5 | Agent implement thiếu branch nếu pseudocode mơ hồ | Determinism Check pass | CÓ |
-| Invariant ownership | CONTRACTS Section 3.X + BLUEPRINT Section 5 | Invariant mất owner thì không ai enforce | ENFORCE BY ↔ Enforces trace check | CÓ |
-| Dependency fitness | BLUEPRINT Section 7 | Library/framework có thể không fit assumptions | Docs check / spike / benchmark / version audit | TÙY RISK |
-| Build feasibility | BLUEPRINT Section 8 | Phase dependency conflict làm implementation stall | Build-order review / dry-run plan | CÓ |
-| Arc 2 readiness | README Maintenance + BLUEPRINT Section 8/9 | Living spec cần signal để update khi reality đổi | Learning Loop + metrics/alerts refs exist | CÓ nếu project > prototype |
+| Intent coherence | BLUEPRINT Section 1 | If intent is wrong, the entire target portrait is wrong | Domain review / PRD check / stakeholder review | YES |
+| Contract consistency | CONTRACTS Section 3-5 | Schema/I/O conflicts will cascade into code | Manual audit / type model / linter / AI critique | YES |
+| Component traceability | BLUEPRINT Section 2 + ADR.md | Components lacking origin easily cause scope creep | ADR Origin coverage review | YES |
+| Behavior determinism | BLUEPRINT Section 5 | Agents will implement missing branches if pseudocode is vague | Determinism Check pass | YES |
+| Invariant ownership | CONTRACTS Section 3.X + BLUEPRINT Section 5 | Unowned invariants are not enforced | ENFORCE BY ↔ Enforces trace check | YES |
+| Dependency fitness | BLUEPRINT Section 7 | Libraries/frameworks might not fit assumptions | Docs check / spike / benchmark / version audit | RISK DEP. |
+| Build feasibility | BLUEPRINT Section 8 | Phase dependency conflicts stall implementation | Build-order review / dry-run plan | YES |
+| Arc 2 readiness | README Maintenance + BLUEPRINT Section 8/9 | Living specs need signals to update when reality changes | Learning Loop + metrics/alerts refs exist | YES for > prototypes |
 
 **Promotion record:**
 ```
@@ -409,198 +409,198 @@ PROMOTED TO   : APPROVED-SSOT
 DATE          : {{YYYY-MM-DD}}
 PROMOTED BY   : {{WHO}}
 EVIDENCE      : {{links / notes / audit refs}}
-ACCEPTED RISK : {{Known unresolved non-blockers, hoặc "none"}}
+ACCEPTED RISK : {{Known unresolved non-blockers, or "none"}}
 ```
 
 ---
 
 ## Spec Compaction Rule
 
-Living spec càng sống lâu càng dễ phình. Khi DPS vượt context budget hoặc agent bắt đầu miss context:
+Living specs bloat as they age. When DPS exceeds the context budget or agents begin missing context:
 
-1. Không xóa rationale active.
-2. Superseded ADR giữ summary + link/history; move detail sang archive nếu cần.
-3. SPEC NOTE đã resolved được compact thành Learning Loop outcome.
-4. Deprecated schema detail giữ trong Deprecation Registry, không lặp trong BLUEPRINT.
-5. `.agent/CONTEXT.md` chỉ chứa active truth, không chứa lịch sử dài.
-6. DPS_INDEX.yml được refresh sau compaction để tooling/agent không trỏ vào section cũ.
+1. Do not delete active rationale.
+2. Superseded ADRs retain summary + link/history; move details to an archive if necessary.
+3. Resolved SPEC NOTEs are compacted into Learning Loop outcomes.
+4. Deprecated schema details belong in the Deprecation Registry, do not repeat them in BLUEPRINT.
+5. `.agent/CONTEXT.md` only contains active truth, not lengthy history.
+6. DPS_INDEX.yml is refreshed after compaction so tooling/agents do not point to old sections.
 
 ---
 
-## Checklist trước khi feed cho agent
+## Checklist before feeding to an agent
 
 **Lifecycle / Promotion**
 ```
-[ ] DPS STATUS không còn là DRAFT nếu dùng để implement
-[ ] PROMOTION BASIS đã ghi rõ bằng chứng review/stress-test/spike/audit
-[ ] Profile đã được chọn (`DPS-Lite` / `DPS-Standard` / `DPS-Critical`)
-[ ] Nếu status = APPROVED-SSOT hoặc cao hơn, `.agent/` projection đã được refresh từ DPS mới nhất
-[ ] Nếu status = LIVING-SPEC, Arc 2 cadence đang active và stale evidence được track
+[ ] DPS STATUS is no longer DRAFT if used for implementation
+[ ] PROMOTION BASIS clearly documents review/stress-test/spike/audit evidence
+[ ] Profile has been selected (`DPS-Lite` / `DPS-Standard` / `DPS-Critical`)
+[ ] If status = APPROVED-SSOT or higher, `.agent/` projection has been refreshed from the latest DPS
+[ ] If status = LIVING-SPEC, Arc 2 cadence is active and stale evidence is tracked
 ```
 
 **Arc 1 — Proof at t=0**
 
-🔧 **Mechanical** *(verifiable trong < 1 phút — không cần đọc nội dung)*
+🔧 **Mechanical** *(verifiable in < 1 minute — no need to read content)*
 ```
-[ ] Tất cả FILL-IN placeholders đã được điền
-[ ] Không có schema nào được define ở nhiều hơn một nơi
-[ ] Mọi Ref<X> trong BLUEPRINT.md đều có X trong CONTRACTS.md
-[ ] Mọi error code trong BLUEPRINT.md đều có trong Error Registry
-[ ] Build order trong Section 8 không có circular dependency
-[ ] 4 canonical files có version/profile/status/current-authority header sync (sau breaking change)
-[ ] Mọi ADR có IMPACT RADIUS điền đầy đủ (component names + schema names)
-[ ] Mọi schema/field trong spec mới hoặc được edit không reference item trong Deprecation Registry
+[ ] All FILL-IN placeholders have been replaced
+[ ] No schema is defined in more than one place
+[ ] Every Ref<X> in BLUEPRINT.md has an X in CONTRACTS.md
+[ ] Every error code in BLUEPRINT.md exists in the Error Registry
+[ ] Build order in Section 8 has no circular dependencies
+[ ] The 4 canonical files have synchronized version/profile/status/current-authority headers (after breaking changes)
+[ ] Every ADR has a fully populated IMPACT RADIUS (component names + schema names)
+[ ] No schema/field in a new or edited spec references items in the Deprecation Registry
 ```
 
-🧠 **Judgment** *(cần đọc và suy nghĩ — không thể checklist máy móc)*
+🧠 **Judgment** *(requires reading and thinking — cannot be mechanically checked)*
 ```
-[ ] ADR tồn tại cho mọi quyết định "trông có vẻ lạ"
-[ ] Mọi operation có pre/post conditions phản ánh đúng behavior thực tế
-[ ] Mọi stateful component có concurrency strategy trong BLUEPRINT Section 4
-[ ] Mọi external call có failure mode được xử lý trong BLUEPRINT Section 6
-[ ] SUCCESS CRITERIA trong BLUEPRINT Section 1 đã được điền (≤ 3 signals đo được)
-[ ] Mọi component STRICT/CRITICAL → Section 5 có failure-condition tests
-[ ] ADR SUPERSEDED → cascade review tất cả components/schemas trong IMPACT RADIUS
+[ ] An ADR exists for every "weird looking" decision
+[ ] All operations have pre/post conditions that reflect actual behavior
+[ ] All stateful components have a concurrency strategy in BLUEPRINT Section 4
+[ ] Every external call has failure modes handled in BLUEPRINT Section 6
+[ ] SUCCESS CRITERIA in BLUEPRINT Section 1 are filled out (≤ 3 measurable signals)
+[ ] Every STRICT/CRITICAL component → Section 5 has failure-condition tests
+[ ] ADR SUPERSEDED → cascade review of all components/schemas in IMPACT RADIUS
 ```
 
 **Arc 2 — Living Proof (t > 0)**
 ```
-[ ] Mọi ADR có CONFIDENCE và VOLATILITY được điền
-[ ] ADR có CONFIDENCE = LOW → VALIDATION TARGET đã được điền (không bỏ trống)
-[ ] ADR có VOLATILITY = WATCHFUL/VOLATILE → WATCH SIGNAL đã được điền
-[ ] Mọi ADR có LAST CONFIRMED điền đầy đủ — không có INITIAL > 3 tháng với VOLATILE/WATCHFUL
-[ ] SCOPE BOUNDARY LOG trong BLUEPRINT Section 1 đã được khởi tạo với initial entry
-[ ] Mọi scope change entry có Review Status được update (không để Pending quá lâu)
-[ ] Learning Loop đã được respond trước mỗi phase transition trong Section 8
-[ ] Metrics table trong BLUEPRINT Section 9 có ADR Ref cho metrics gắn với assumptions
-[ ] External Contracts trong CONTRACTS Section 6 có Last verified trong vòng 3 tháng
-[ ] Dependency Fitness Registry trong BLUEPRINT Section 7 có Last verified cho dependency architecture-relevant
-[ ] DPS_INDEX.yml và `.agent/` projection được refresh sau change lớn
+[ ] All ADRs have CONFIDENCE and VOLATILITY populated
+[ ] ADRs with CONFIDENCE = LOW → VALIDATION TARGET is populated (not empty)
+[ ] ADRs with VOLATILITY = WATCHFUL/VOLATILE → WATCH SIGNAL is populated
+[ ] All ADRs have a populated LAST CONFIRMED field — no INITIAL > 3 months with VOLATILE/WATCHFUL
+[ ] SCOPE BOUNDARY LOG in BLUEPRINT Section 1 is initialized with an initial entry
+[ ] Every scope change entry has its Review Status updated (no long-standing Pending)
+[ ] Learning Loop is responded to before every phase transition in Section 8
+[ ] Metrics table in BLUEPRINT Section 9 has ADR Refs for metrics linked to assumptions
+[ ] External Contracts in CONTRACTS Section 6 have a Last verified date within 3 months
+[ ] Dependency Fitness Registry in BLUEPRINT Section 7 has Last verified dates for architecture-relevant dependencies
+[ ] DPS_INDEX.yml and `.agent/` projection are refreshed after large changes
 ```
 
 ---
 
 ## ⚠️ DPS Smell Indicators
 
-Nếu thấy một trong những dấu hiệu này → cần fix **trước khi** feed agent:
+If you notice any of these signs → they must be fixed **before** feeding the agent:
 
 **Lifecycle / Promotion Smells**
 ```
-❌ DPS STATUS = DRAFT nhưng được feed cho coding agent
-   như implementation authority            → agent đang build từ artifact chưa promote;
-                                              promote hoặc mark rõ exploratory-only
+❌ DPS STATUS = DRAFT but is fed to a coding agent
+   as implementation authority               → agent is building from an unpromoted artifact;
+                                                promote or clearly mark as exploratory-only
 
-❌ DPS STATUS = APPROVED-SSOT nhưng
-   PROMOTION BASIS trống                  → không biết đã stress-test gì;
-                                              SSOT authority không có evidence trail
+❌ DPS STATUS = APPROVED-SSOT but
+   PROMOTION BASIS is empty                  → unclear what was stress-tested;
+                                                SSOT authority lacks an evidence trail
 
-❌ `.agent/` projection conflict với DPS
-   canonical files                         → stale agent context;
-                                              refresh projection trước khi implement tiếp
+❌ `.agent/` projection conflicts with DPS
+   canonical files                           → stale agent context;
+                                                refresh projection before continuing to implement
 
-❌ Living spec phình quá lớn làm agent miss
-   active constraints                      → cần Spec Compaction Rule;
-                                              archive history, giữ active truth compact
+❌ Living spec bloats, causing agent to miss
+   active constraints                        → needs Spec Compaction Rule;
+                                                archive history, keep active truth compact
 ```
 
 **Arc 1 — Proof Validity Smells**
 ```
-❌ Agent hỏi lại sau khi đọc BLUEPRINT     → pseudocode chưa đủ detail (Rule 3)
-❌ Tìm thấy tên schema ở 2 nơi khác nhau  → vi phạm Single Definition (Rule 1)
-❌ Có Ref<X> trong BLUEPRINT nhưng không
-   tìm thấy X trong CONTRACTS              → broken reference
-❌ Operation có side effect nhưng không
-   có POST-CONDITIONS                      → contract incomplete
-❌ State machine có transition không có
-   guard/action                            → underspecified
-❌ Phase N depend on Phase N+1             → circular dependency trong build order
-❌ 4 canonical files có version/profile/status/current-authority header không sync
-   sau breaking change                     → version drift (Version Sync Rule)
-❌ Stateful component không có
-   concurrency strategy                    → race condition risk (BLUEPRINT Section 4)
-❌ Component STRICT/CRITICAL trong Section 2
-   nhưng Section 5 không có failure-
-   condition tests                         → Proof Standard không được enforce
-❌ ADR bị SUPERSEDED nhưng IMPACT RADIUS
-   chưa trigger review components/schemas  → cascade failure risk (blindside attack)
+❌ Agent asks questions after reading BLUEPRINT → pseudocode is insufficiently detailed (Rule 3)
+❌ Found the same schema name in 2 different places → Single Definition violation (Rule 1)
+❌ Ref<X> in BLUEPRINT but X is missing from
+   CONTRACTS                                 → broken reference
+❌ Operation has side effects but no
+   POST-CONDITIONS                           → contract is incomplete
+❌ State machine has transitions lacking
+   guards/actions                            → underspecified
+❌ Phase N depends on Phase N+1              → circular dependency in build order
+❌ 4 canonical files have out-of-sync version/profile/status/current-authority
+   headers following a breaking change       → version drift (Version Sync Rule)
+❌ Stateful component missing a
+   concurrency strategy                      → race condition risk (BLUEPRINT Section 4)
+❌ Component is STRICT/CRITICAL in Section 2
+   but Section 5 lacks failure-condition
+   tests                                     → Proof Standard is not enforced
+❌ ADR is SUPERSEDED but IMPACT RADIUS has
+   not triggered a review of components/schemas → cascade failure risk (blindside attack)
 
-❌ Schema X trong CONTRACTS Section 3 nhưng
-   không có Ref<X> trong BLUEPRINT và không có
-   "External consumer" annotation          → orphaned schema — hoặc external-only schema
-                                              chưa được annotate (fix: thêm External consumer)
+❌ Schema X in CONTRACTS Section 3 but no
+   Ref<X> in BLUEPRINT and no
+   "External consumer" annotation            → orphaned schema — or external-only schema
+                                                unannotated (fix: add External consumer)
 
-❌ Error code E trong CONTRACTS Section 5
-   nhưng không component nào trong BLUEPRINT
-   Section 5 có path trigger E             → dead error code — E không được implement
-                                              hoặc bị bỏ quên khi refactor
+❌ Error code E in CONTRACTS Section 5
+   but no component in BLUEPRINT Section 5
+   has a path triggering E                   → dead error code — E is unimplemented
+                                                or was forgotten during refactoring
 
-❌ Component trong Section 2 Registry không
-   có corresponding "### {{COMP}}" section
-   trong Section 5                         → component đăng ký nhưng chưa được spec;
-                                              phase gate không được advance
+❌ Component in Section 2 Registry lacks a
+   corresponding "### {{COMP}}" section
+   in Section 5                              → component is registered but not spec'd;
+                                                phase gate cannot be advanced
 
-❌ Component operation trong Section 3 Data
-   Flow nhận Ref<SchemaA> nhưng Section 5
-   spec cùng operation đó nhận Ref<SchemaB> → schema mismatch giữa flow diagram và component spec;
-                                              agent không biết cái nào là SSOT — fix trước khi implement
+❌ Component operation in Section 3 Data
+   Flow takes Ref<SchemaA> but Section 5
+   spec for that operation takes Ref<SchemaB> → schema mismatch between flow diagram and component spec;
+                                                agent doesn't know which is SSOT — fix before implementing
 
-❌ DECISION TYPE = COMPARATIVE nhưng "Option B"
-   hoặc "Option C" mô tả solution clearly
-   infeasible trong context này            → Dummy Alternative (fabricated option);
-                                              đổi DECISION TYPE hoặc document alternative thực sự
+❌ DECISION TYPE = COMPARATIVE but "Option B"
+   or "Option C" describes an obviously
+   infeasible solution in this context       → Dummy Alternative (fabricated option);
+                                                change DECISION TYPE or document a real alternative
 
-❌ Schema field comment dùng domain term
-   không có trong Glossary Section 10      → Ubiquitous Language drift đang hình thành;
-                                              thêm term vào Glossary hoặc dùng term đúng từ đó
+❌ Schema field comment uses a domain term
+   not found in Glossary Section 10          → Ubiquitous Language drift forming;
+                                                add the term to Glossary or use the correct term
 
-❌ Schema/field trong Deprecation Registry
-   được reference trong BLUEPRINT Section 5
-   pseudocode của component mới            → dùng deprecated artifact trong new code;
-                                              migrate sang field/schema replacement trước khi proceed
+❌ Schema/field in Deprecation Registry
+   is referenced in BLUEPRINT Section 5
+   pseudocode of a new component             → using a deprecated artifact in new code;
+                                                migrate to replacement field/schema before proceeding
 
-❌ ENFORCE BY component trong CONTRACTS Section 3.X
-   bị remove hoặc rename mà không update
-   SYSTEM INVARIANTS                       → invariant mất owner;
-                                              không component nào enforce nữa
+❌ ENFORCE BY component in CONTRACTS Section 3.X
+   is removed or renamed without updating
+   SYSTEM INVARIANTS                         → invariant lost its owner;
+                                                no component enforces it anymore
 
-❌ Dependency architecture-relevant được
-   agent thêm vào code nhưng không có trong
-   Dependency Fitness Registry             → implementation đang introduce architecture decision
-                                              ngoài DPS
+❌ Architecture-relevant dependency is
+   added by an agent to code but is missing
+   from Dependency Fitness Registry          → implementation is introducing architecture decisions
+                                                outside of DPS
 
-❌ Module/file chính không có DPS trace
-   anchor ở boundary quan trọng            → code không map được về target portrait;
-                                              khó audit implementation đúng spec không
+❌ Main module/file lacks a DPS trace
+   anchor at an important boundary           → code cannot be mapped back to target portrait;
+                                                hard to audit if implementation matches spec
 ```
 
 **Arc 2 — Living Proof Smells**
 ```
-❌ ADR có CONFIDENCE = LOW nhưng
-   không có VALIDATION TARGET              → tag chỉ là marker, không có action path;
-                                              LOW decisions tích lũy và không bao giờ được resolve
-❌ ADR có VOLATILITY = WATCHFUL/VOLATILE
-   nhưng không có WATCH SIGNAL             → khai báo vô nghĩa, không biết watch cái gì
-❌ ADR có IMPACT RADIUS sâu nhưng
-   CONFIDENCE = LOW + VOLATILITY = VOLATILE → architectural smell: nhiều decisions
-                                              depend on foundation không vững
-❌ Scope Boundary Log có "Pending"
-   Review Status quá lâu                   → impacted ADRs chưa được reconcile vào proof;
-                                              scope change chưa được propagate
-❌ Metrics Alert bị breach nhưng không có
-   ADR Ref trong Metrics table             → không biết assumption nào đang sai,
-                                              không có action path để downgrade Confidence
-❌ Phase gate advance mà không có Learning
-   Loop response                           → implementation insight bị bỏ lỡ,
-                                              proof drift tích lũy silently
-❌ External Contract có Last verified
-   > 3 tháng mà không có re-verify plan   → spec drift risk đang tích lũy
-❌ Change được apply nhưng không classify
-   theo Change Classification Protocol     → không biết fix code, update spec, tạo ADR,
-                                              hay treat như intent drift
+❌ ADR has CONFIDENCE = LOW but
+   lacks a VALIDATION TARGET                 → tag is just a marker with no action path;
+                                                LOW decisions accumulate and are never resolved
+❌ ADR has VOLATILITY = WATCHFUL/VOLATILE
+   but lacks a WATCH SIGNAL                  → meaningless declaration, don't know what to watch
+❌ ADR has deep IMPACT RADIUS but
+   CONFIDENCE = LOW + VOLATILITY = VOLATILE  → architectural smell: many decisions
+                                                depend on a shaky foundation
+❌ Scope Boundary Log has a "Pending"
+   Review Status for too long                → impacted ADRs haven't been reconciled into the proof;
+                                                scope change hasn't propagated
+❌ Metrics Alert is breached but lacks an
+   ADR Ref in the Metrics table              → unknown which assumption is wrong,
+                                                no action path to downgrade Confidence
+❌ Phase gate advances without a Learning
+   Loop response                             → implementation insights are missed,
+                                                proof drift silently accumulates
+❌ External Contract has Last verified
+   > 3 months with no re-verify plan         → accumulating spec drift risk
+❌ Change applied without classification
+   under Change Classification Protocol      → unclear whether to fix code, update spec, create ADR,
+                                                or treat as intent drift
 
-❌ ADR có LAST CONFIRMED: INITIAL và date
-   > 3 tháng trong khi VOLATILITY =
-   VOLATILE hoặc WATCHFUL                  → stale confidence; assumption này chưa được validate
-                                              bởi implementation, metrics, hay review nào —
-                                              downgrade Confidence hoặc schedule explicit validation
+❌ ADR has LAST CONFIRMED: INITIAL and date
+   > 3 months while VOLATILITY =
+   VOLATILE or WATCHFUL                      → stale confidence; this assumption has not been validated
+                                                by implementation, metrics, or any review —
+                                                downgrade Confidence or schedule explicit validation
 ```

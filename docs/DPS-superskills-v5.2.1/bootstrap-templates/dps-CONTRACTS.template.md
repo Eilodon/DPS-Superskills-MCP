@@ -1,23 +1,23 @@
 # CONTRACTS.md — Schema Registry
 > **DPS VERSION:** `5.0-template`
-> **DPS PROFILE:** `DPS-Standard` *(chọn: `DPS-Lite` / `DPS-Standard` / `DPS-Critical`)*
-### {{TÊN_DỰ_ÁN}} · v{{VERSION}} · compatible with: [BLUEPRINT v{{Y}}, ADR v{{Z}}]
+> **DPS PROFILE:** `DPS-Standard` *(choose: `DPS-Lite` / `DPS-Standard` / `DPS-Critical`)*
+### {{PROJECT_NAME}} · v{{VERSION}} · compatible with: [BLUEPRINT v{{Y}}, ADR v{{Z}}]
 
-> **Nguyên tắc vàng:** Mọi type, schema, enum, constant được define **MỘT LẦN DUY NHẤT** tại đây.
-> BLUEPRINT.md và code **reference** — không redefine, không copy, không paraphrase.
+> **Golden Rule:** Every type, schema, enum, and constant is defined **EXACTLY ONCE** here.
+> BLUEPRINT.md and code **reference** them — do not redefine, do not copy, do not paraphrase.
 >
-> Khi thấy conflict giữa file này và bất kỳ file nào khác → file này thắng.
+> When there is a conflict between this file and any other file → this file wins.
 
 
-> **DPS STATUS:** `DRAFT` *(chọn: `DRAFT` / `PROOF-READY` / `APPROVED-SSOT` / `IMPLEMENTATION-ACTIVE` / `LIVING-SPEC` / `SUPERSEDED`)*
+> **DPS STATUS:** `DRAFT` *(choose: `DRAFT` / `PROOF-READY` / `APPROVED-SSOT` / `IMPLEMENTATION-ACTIVE` / `LIVING-SPEC` / `SUPERSEDED`)*
 > **PROMOTED BY:** {{WHO}} · **PROMOTED AT:** {{YYYY-MM-DD}}
 > **PROMOTION BASIS:** {{review / stress-test / spike / audit / validation evidence}}
-> **CURRENT AUTHORITY:** `DPS` *(default template value)* — nếu không phải `DPS`, ghi rõ lý do và phạm vi.
+> **CURRENT AUTHORITY:** `DPS` *(default template value)* — if not `DPS`, specify the reason and scope.
 >
-> **Rule:** `DRAFT` chưa được dùng làm source để agent implement. Chỉ `APPROVED-SSOT`, `IMPLEMENTATION-ACTIVE`, hoặc `LIVING-SPEC` mới là implementation authority.
+> **Rule:** `DRAFT` must not be used as an implementation source for agents. Only `APPROVED-SSOT`, `IMPLEMENTATION-ACTIVE`, or `LIVING-SPEC` hold implementation authority.
 ---
 
-## Mục lục
+## Table of Contents
 
 1. [Primitive Types & Constants](#1-primitive-types--constants)
 2. [Enums](#2-enums)
@@ -35,37 +35,37 @@
 
 ## 1. PRIMITIVE TYPES & CONSTANTS
 
-> Các kiểu và hằng số dùng xuyên suốt hệ thống.
-> Agent KHÔNG hard-code giá trị của các constants này ở bất kỳ nơi nào khác.
+> Types and constants used throughout the system.
+> Agents MUST NOT hard-code these constant values anywhere else.
 
 📝 **FILL-IN**
 
 ```
 {{CONST_1}} :: {{TYPE}} = {{VALUE}}
-  // Lý do: {{TẠI_SAO_GIÁ_TRỊ_NÀY}}
+  // Reason: {{WHY_THIS_VALUE}}
 
 {{CONST_2}} :: {{TYPE}} = {{VALUE}}
-  // Lý do: {{TẠI_SAO_GIÁ_TRỊ_NÀY}}
+  // Reason: {{WHY_THIS_VALUE}}
 ```
 
-> **Type notation dùng trong file này:**
+> **Type notation used in this file:**
 > ```
 > FieldName :: Type                         — required field
 > FieldName :: Type?                        — optional field (nullable)
 > FieldName :: List<Type>                   — ordered list
 > FieldName :: Map<KeyType, ValueType>      — map / dict
-> FieldName :: TypeA | TypeB               — union type (chọn một)
-> FieldName :: Ref<SchemaName>              — reference đến schema khác
-> FieldName :: Result<OkType, ErrCode>     — success hoặc typed error (không dùng exception)
-> FieldName :: (TypeA, TypeB, TypeC)       — tuple, thứ tự có ý nghĩa, không thay đổi
-> FieldName :: ~ExpressionOrField          — derived/computed từ fields khác, KHÔNG persist vào DB
+> FieldName :: TypeA | TypeB               — union type (choose one)
+> FieldName :: Ref<SchemaName>              — reference to another schema
+> FieldName :: Result<OkType, ErrCode>     — success or typed error (no exceptions)
+> FieldName :: (TypeA, TypeB, TypeC)       — tuple, order is significant, immutable
+> FieldName :: ~ExpressionOrField          — derived/computed from other fields, DO NOT persist to DB
 > ```
 
 ---
 
 ## 2. ENUMS
 
-> Mọi enum được define tại đây. Không tạo inline enum trong schema.
+> All enums are defined here. Do not create inline enums in schemas.
 
 📝 **FILL-IN**
 
@@ -73,13 +73,13 @@
 
 ```
 {{ENUM_1_NAME}} ::
-  | {{VARIANT_A}}   // {{MÔ_TẢ_KHI_NÀO_DÙNG}}
-  | {{VARIANT_B}}   // {{MÔ_TẢ_KHI_NÀO_DÙNG}}
-  | {{VARIANT_C}}   // {{MÔ_TẢ_KHI_NÀO_DÙNG}}
+  | {{VARIANT_A}}   // {{WHEN_TO_USE_DESCRIPTION}}
+  | {{VARIANT_B}}   // {{WHEN_TO_USE_DESCRIPTION}}
+  | {{VARIANT_C}}   // {{WHEN_TO_USE_DESCRIPTION}}
 ```
 
-**Dùng ở:** `{{SCHEMA_A}}`, `{{SCHEMA_B}}`
-**Không dùng cho:** {{EDGE_CASE_LOẠI_TRỪ}}
+**Used in:** `{{SCHEMA_A}}`, `{{SCHEMA_B}}`
+**Do not use for:** {{EXCLUSION_EDGE_CASE}}
 
 ### {{ENUM_2_NAME}}
 
@@ -89,14 +89,14 @@
   | {{VARIANT_B}}
 ```
 
-**Dùng ở:** `{{SCHEMA}}`
+**Used in:** `{{SCHEMA}}`
 
 ---
 
 ## 3. CORE SCHEMAS
 
-> Schemas được sắp xếp từ primitive → composite.
-> Schema phụ thuộc schema khác → schema kia phải được define TRÊN nó.
+> Schemas are ordered from primitive → composite.
+> If a schema depends on another schema → the dependent schema must be defined ABOVE it.
 
 📝 **FILL-IN**
 
@@ -104,42 +104,42 @@
 
 ### {{SCHEMA_1_NAME}}
 
-> {{MÔ_TẢ_NGẮN_MỘT_DÒNG — schema này đại diện cho cái gì trong domain}}
+> {{ONE_LINE_SHORT_DESCRIPTION — what this schema represents in the domain}}
 > **Owner:** {{TEAM/PERSON}}
-> **Decision origin:** ADR-{{N}} — {{TÊN_ADR_NGẮN_GỌN}}
->   *(Nếu không có ADR: ghi `Pre-ADR design` + một câu lý do — đây là debt, không phải lý do để bỏ qua)*
-> **External consumer:** {{tên client/team nếu schema này không có Ref<X> trong BLUEPRINT — omit nếu không áp dụng}}
+> **Decision origin:** ADR-{{N}} — {{SHORT_ADR_NAME}}
+>   *(If no ADR: write `Pre-ADR design` + one sentence reason — this is debt, not an excuse to skip)*
+> **External consumer:** {{client/team name if this schema does not have Ref<X> in BLUEPRINT — omit if not applicable}}
 
 ```
 {{SCHEMA_1_NAME}} :: {
-  {{field_1}}  :: {{Type}}                    // {{ý_nghĩa_business}} — xem Glossary: {{TERM}} nếu dùng domain term
-  {{field_2}}  :: {{Type}}?                   // {{ý_nghĩa_business}} — optional vì {{lý_do}}
-  {{field_3}}  :: Ref<{{OTHER_SCHEMA}}>        // {{ý_nghĩa_relationship}}
-  {{field_4}}  :: {{ENUM_NAME}}               // {{ý_nghĩa_business}}
-  ~{{field_5}} :: {{Type}}                    // computed từ {{field_1}} + {{field_2}}, KHÔNG lưu DB
+  {{field_1}}  :: {{Type}}                    // {{business_meaning}} — see Glossary: {{TERM}} if using a domain term
+  {{field_2}}  :: {{Type}}?                   // {{business_meaning}} — optional because {{reason}}
+  {{field_3}}  :: Ref<{{OTHER_SCHEMA}}>        // {{relationship_meaning}}
+  {{field_4}}  :: {{ENUM_NAME}}               // {{business_meaning}}
+  ~{{field_5}} :: {{Type}}                    // computed from {{field_1}} + {{field_2}}, DO NOT save to DB
 }
 ```
 
-> **Annotation `xem Glossary: {{TERM}}`:** Khi field comment dùng domain term — link đến Glossary Section 10.
-> Nếu term chưa có trong Glossary → thêm vào Glossary trước. Đây là first-class enforcement của Ubiquitous Language.
+> **Annotation `see Glossary: {{TERM}}`:** When a field comment uses a domain term — link to Glossary Section 10.
+> If the term is not yet in the Glossary → add it to the Glossary first. This is a first-class enforcement of Ubiquitous Language.
 
 **Constraints:**
 ```
-INVARIANT: {{field_1}} không được rỗng khi {{field_4}} == {{VARIANT}}
-INVARIANT: {{field_2}} phải present khi {{field_3}} != null
+INVARIANT: {{field_1}} must not be empty when {{field_4}} == {{VARIANT}}
+INVARIANT: {{field_2}} must be present when {{field_3}} != null
 RANGE:     {{field_1}}.length ∈ [{{MIN}}, {{MAX}}]
 ```
 
-**Không được nhầm với:** `{{SIMILAR_SCHEMA}}` — khác ở chỗ {{ĐIỂM_KHÁC_BIỆT}}
+**Not to be confused with:** `{{SIMILAR_SCHEMA}}` — differs in {{DIFFERENCES}}
 
 ---
 
 ### {{SCHEMA_2_NAME}}
 
-> {{MÔ_TẢ_NGẮN}}
+> {{SHORT_DESCRIPTION}}
 > **Owner:** {{TEAM/PERSON}}
-> **Decision origin:** ADR-{{N}} — {{TÊN_ADR_NGẮN_GỌN}}
-> **External consumer:** {{tên client/team nếu áp dụng — omit nếu không}}
+> **Decision origin:** ADR-{{N}} — {{SHORT_ADR_NAME}}
+> **External consumer:** {{client/team name if applicable — omit if not}}
 
 ```
 {{SCHEMA_2_NAME}} :: {
@@ -151,62 +151,62 @@ RANGE:     {{field_1}}.length ∈ [{{MIN}}, {{MAX}}]
 
 **Constraints:**
 ```
-INVARIANT: {{field_2}}.length >= 1   // phải có ít nhất một item
+INVARIANT: {{field_2}}.length >= 1   // must have at least one item
 ```
 
 ---
 
 ### {{SCHEMA_N_NAME}}
 
-📝 Thêm schemas theo cùng format. Mỗi schema cần: mô tả, owner, **decision origin (mandatory)**, external consumer annotation (khi áp dụng), field definitions, constraints, disambiguation nếu cần.
+📝 Add schemas using the same format. Each schema needs: description, owner, **decision origin (mandatory)**, external consumer annotation (when applicable), field definitions, constraints, disambiguation if needed.
 
 ---
 
 ## 3.X. SYSTEM INVARIANTS
 
-> Cross-component invariants — constraints liên quan đến ≥2 components hoặc ≥2 schemas đồng thời.
-> Phân biệt với: per-schema INVARIANT (chỉ liên quan đến một schema) và
-> state machine INVARIANTS trong BLUEPRINT Section 4 (chỉ liên quan đến state transitions).
+> Cross-component invariants — constraints involving ≥2 components or ≥2 schemas simultaneously.
+> Distinguish from: per-schema INVARIANT (involving only one schema) and
+> state machine INVARIANTS in BLUEPRINT Section 4 (involving only state transitions).
 >
-> Mỗi System Invariant cần: định nghĩa, scope (ai liên quan), và enforcement mechanism (ai chịu trách nhiệm check).
-> Đây là canonical source cho extraction vào `.agent/INVARIANTS.md`.
+> Each System Invariant needs: definition, scope (who is involved), and enforcement mechanism (who is responsible for checking).
+> This is the canonical source for extraction into `.agent/INVARIANTS.md`.
 
-📝 **FILL-IN** *(bỏ qua nếu chưa có cross-component invariants)*
+📝 **FILL-IN** *(skip if there are no cross-component invariants yet)*
 
 ---
 
 ### {{INVARIANT_NAME}}
 
 ```
-INVARIANT   : {{MÔ_TẢ — phát biểu formal như một điều kiện phải luôn đúng}}
-              // Vd: "Tổng active_sessions của một User không được vượt quá MAX_SESSIONS"
-              //     "Mọi Order ở trạng thái COMPLETED phải có ít nhất một PaymentRecord"
+INVARIANT   : {{DESCRIPTION — formal statement as a condition that must always be true}}
+              // E.g.: "The total active_sessions of a User must not exceed MAX_SESSIONS"
+              //     "Every Order in COMPLETED state must have at least one PaymentRecord"
 
 SCOPE       : Components : {{COMP_A}}, {{COMP_B}}, {{COMP_C}}
               Schemas    : `{{SCHEMA_1}}`, `{{SCHEMA_2}}`
 
 ENFORCE BY  : {{COMP_A}}
-              // Component DUY NHẤT chịu trách nhiệm check invariant này trước mọi mutation liên quan.
-              // Một invariant — một owner component — tránh "ai cũng check" = "không ai check"
-              // Thêm annotation "Enforces: {{INVARIANT_NAME}}" vào spec của COMP_A trong BLUEPRINT Section 5
+              // The SOLE component responsible for checking this invariant before any related mutation.
+              // One invariant — one owner component — avoids "everyone checks" = "no one checks"
+              // Add annotation "Enforces: {{INVARIANT_NAME}}" to COMP_A's spec in BLUEPRINT Section 5
 
-VIOLATED WHEN: {{Điều kiện nào sẽ violate — viết để dễ express thành automated test}}
-TEST REQUIRED: {{Pass/Fail criterion để verify invariant trong automated tests}}
-              // Vd: "ASSERT user.active_sessions.count <= MAX_SESSIONS sau mọi session.create()"
+VIOLATED WHEN: {{Condition that violates it — write so it's easily expressed as an automated test}}
+TEST REQUIRED: {{Pass/Fail criterion to verify the invariant in automated tests}}
+              // E.g.: "ASSERT user.active_sessions.count <= MAX_SESSIONS after every session.create()"
 ```
 
-> **Khi tạo System Invariant mới:**
-> 1. Add entry vào section này
-> 2. Add annotation `**Enforces:** {{INVARIANT_NAME}}` vào component spec của ENFORCE BY component
->    trong BLUEPRINT Section 5 (phía trên PSEUDOCODE của function chịu trách nhiệm)
-> 3. Add smell indicator check: nếu ENFORCE BY component bị remove/rename → invariant mất owner
+> **When creating a new System Invariant:**
+> 1. Add entry to this section
+> 2. Add annotation `**Enforces:** {{INVARIANT_NAME}}` to the component spec of the ENFORCE BY component
+>    in BLUEPRINT Section 5 (above the PSEUDOCODE of the responsible function)
+> 3. Add smell indicator check: if the ENFORCE BY component is removed/renamed → invariant loses owner
 
 ---
 
 ## 4. INPUT / OUTPUT CONTRACTS
 
-> I/O contract của từng entry point / API boundary trong hệ thống.
-> Đây là "giao kèo" giữa các components — không thay đổi mà không có ADR entry.
+> I/O contracts of each entry point / API boundary in the system.
+> This is the "agreement" between components — do not change without an ADR entry.
 
 📝 **FILL-IN**
 
@@ -214,35 +214,35 @@ TEST REQUIRED: {{Pass/Fail criterion để verify invariant trong automated test
 
 ### {{OPERATION_1}}
 
-> {{MÔ_TẢ_OPERATION — làm gì, tại sao}}
+> {{OPERATION_DESCRIPTION — what it does, why}}
 
 ```
 INPUT  :: Ref<{{INPUT_SCHEMA}}>
 
 OUTPUT :: Ref<{{OUTPUT_SCHEMA}}>
-       | Ref<{{ERROR_CODE}}>   // khi {{ĐIỀU_KIỆN_LỖI}}
-       | Ref<{{ERROR_CODE}}>   // khi {{ĐIỀU_KIỆN_LỖI}}
+       | Ref<{{ERROR_CODE}}>   // when {{ERROR_CONDITION}}
+       | Ref<{{ERROR_CODE}}>   // when {{ERROR_CONDITION}}
 
 SIDE EFFECTS:
-  - {{STATE_MUTATION_1}} : {{MÔ_TẢ}}
-  - {{EXTERNAL_CALL}}    : gọi {{SERVICE}} với {{DATA}}
+  - {{STATE_MUTATION_1}} : {{DESCRIPTION}}
+  - {{EXTERNAL_CALL}}    : calls {{SERVICE}} with {{DATA}}
 
 PRE-CONDITIONS:
-  - {{field}} phải {{ĐIỀU_KIỆN}} trước khi gọi
-  - {{STATE}} phải ở trạng thái {{TRẠNG_THÁI}}
+  - {{field}} must {{CONDITION}} before calling
+  - {{STATE}} must be in state {{STATE}}
 
 POST-CONDITIONS:
-  - {{STATE}} sẽ chuyển sang {{TRẠNG_THÁI_MỚI}}
-  - {{RESOURCE}} sẽ được {{CREATED/UPDATED/DELETED}}
+  - {{STATE}} will transition to {{NEW_STATE}}
+  - {{RESOURCE}} will be {{CREATED/UPDATED/DELETED}}
 
-IDEMPOTENT: {{CÓ/KHÔNG}} — {{LÝ_DO}}
+IDEMPOTENT: {{YES/NO}} — {{REASON}}
 ```
 
 ---
 
 ### {{OPERATION_2}}
 
-📝 Thêm operations theo cùng format.
+📝 Add operations using the same format.
 
 ```
 INPUT  :: Ref<{{INPUT_SCHEMA}}>
@@ -253,48 +253,48 @@ OUTPUT :: Ref<{{OUTPUT_SCHEMA}}>
 SIDE EFFECTS: none
 
 PRE-CONDITIONS:
-  - {{ĐIỀU_KIỆN}}
+  - {{CONDITION}}
 
 POST-CONDITIONS:
-  - {{KẾT_QUẢ}}
+  - {{RESULT}}
 
-IDEMPOTENT: CÓ
+IDEMPOTENT: YES
 ```
 
 ---
 
 ## 5. ERROR REGISTRY
 
-> Mọi error code được define tại đây với HTTP status, retryability, severity,
-> message template, và context cần thiết để debug.
+> All error codes are defined here with HTTP status, retryability, severity,
+> message templates, and required context for debugging.
 
 📝 **FILL-IN**
 
-| Code | HTTP | Retryable? | Severity | Message Template | Context cần thiết | Khi nào xảy ra |
+| Code | HTTP | Retryable? | Severity | Message Template | Required Context | When it happens |
 |---|---|---|---|---|---|---|
-| `{{ERR_1}}` | {{4xx/5xx}} | CÓ (backoff) | ERROR | `"{{MESSAGE_TEMPLATE}}"` | `{{FIELD_1}}`, `{{FIELD_2}}` | {{TRIGGER_CONDITION}} |
-| `{{ERR_2}}` | {{4xx/5xx}} | KHÔNG | INFO | `"{{MESSAGE_TEMPLATE}}"` | `{{FIELD}}` | {{TRIGGER_CONDITION}} |
+| `{{ERR_1}}` | {{4xx/5xx}} | YES (backoff) | ERROR | `"{{MESSAGE_TEMPLATE}}"` | `{{FIELD_1}}`, `{{FIELD_2}}` | {{TRIGGER_CONDITION}} |
+| `{{ERR_2}}` | {{4xx/5xx}} | NO | INFO | `"{{MESSAGE_TEMPLATE}}"` | `{{FIELD}}` | {{TRIGGER_CONDITION}} |
 
 > **Severity guide:**
-> - `FATAL` — hệ thống không thể tiếp tục, page on-call ngay
-> - `ERROR` — operation fail, cần investigate; hệ thống vẫn chạy
-> - `WARN`  — không fail nhưng bất thường, cần monitor
-> - `INFO`  — lỗi do user input, không cần alert
+> - `FATAL` — system cannot continue, page on-call immediately
+> - `ERROR` — operation failed, requires investigation; system still running
+> - `WARN`  — no failure but unusual, needs monitoring
+> - `INFO`  — user input error, no alert needed
 >
 > **Retryable guide:**
-> - `CÓ (backoff)` — retry với exponential backoff, tối đa {{N}} lần
-> - `CÓ (immediate)` — retry ngay lập tức, tối đa {{N}} lần
-> - `KHÔNG` — retry sẽ không thay đổi kết quả, client không nên retry
+> - `YES (backoff)` — retry with exponential backoff, max {{N}} times
+> - `YES (immediate)` — retry immediately, max {{N}} times
+> - `NO` — retry will not change the outcome, client should not retry
 >
-> **Error format chuẩn:**
+> **Standard error format:**
 > ```
 > Error :: {
->   code      :: ErrorCode        // từ registry này
->   message   :: string           // theo message template
->   context   :: Map<string, any> // các fields liệt kê trong cột "Context"
->   retryable :: bool             // từ cột "Retryable?" trong registry
->   severity  :: Severity         // từ cột "Severity" trong registry
->   trace     :: string?          // optional, chỉ trong dev mode
+>   code      :: ErrorCode        // from this registry
+>   message   :: string           // according to message template
+>   context   :: Map<string, any> // fields listed in the "Context" column
+>   retryable :: bool             // from the "Retryable?" column in registry
+>   severity  :: Severity         // from the "Severity" column in registry
+>   trace     :: string?          // optional, only in dev mode
 > }
 > ```
 
@@ -302,137 +302,137 @@ IDEMPOTENT: CÓ
 
 ## 6. EXTERNAL CONTRACTS
 
-> Interface với các external services, third-party APIs, hoặc databases.
-> Ghi lại những gì hệ thống này *expect* từ bên ngoài — không phải implementation của bên ngoài.
+> Interfaces with external services, third-party APIs, or databases.
+> Document what this system *expects* from the outside — not the implementation of the outside.
 
 📝 **FILL-IN**
 
 ### {{EXTERNAL_SERVICE_1}}
 
-**API Version expected:** v{{N}}
-**SLA expected:** {{N}}% uptime · P99 ≤ {{N}}ms response time
+**Expected API Version:** v{{N}}
+**Expected SLA:** {{N}}% uptime · P99 ≤ {{N}}ms response time
 **Last verified:** {{YYYY-MM-DD}}
-**Contact / Docs:** {{URL_HOẶC_TEAM}}
+**Contact / Docs:** {{URL_OR_TEAM}}
 
 ```
-// Hệ thống này gọi {{SERVICE}} với:
+// This system calls {{SERVICE}} with:
 REQUEST :: {
   {{field}} :: {{Type}}
 }
 
-// Hệ thống này expect {{SERVICE}} trả về:
+// This system expects {{SERVICE}} to return:
 RESPONSE :: {
   {{field}} :: {{Type}}
 }
 
-// Failure modes hệ thống phải handle:
+// Failure modes this system must handle:
 FAILURES ::
-  | TIMEOUT          // sau {{N}}ms → {{XỬ_LÝ_GÌ}}
-  | UNAVAILABLE      // {{XỬ_LÝ_GÌ}}
-  | VERSION_MISMATCH // detect qua {{FIELD/HEADER}} → fail fast + alert, KHÔNG cố parse
-  | {{ERROR}}        // {{XỬ_LÝ_GÌ}}
+  | TIMEOUT          // after {{N}}ms → {{WHAT_TO_DO}}
+  | UNAVAILABLE      // {{WHAT_TO_DO}}
+  | VERSION_MISMATCH // detect via {{FIELD/HEADER}} → fail fast + alert, DO NOT try to parse
+  | {{ERROR}}        // {{WHAT_TO_DO}}
 ```
 
-> Nếu response schema thay đổi không tương thích → alert + fail fast.
-> KHÔNG cố parse partial response. Xem BLUEPRINT.md Section 6 để biết retry/circuit breaker strategy.
-> Nếu external service/database/library là architecture-relevant dependency → thêm/cross-ref BLUEPRINT.md Section 7 Dependency Fitness Registry.
+> If the response schema changes incompatibly → alert + fail fast.
+> DO NOT try to parse partial responses. See BLUEPRINT.md Section 6 for retry/circuit breaker strategy.
+> If the external service/database/library is an architecture-relevant dependency → add/cross-ref BLUEPRINT.md Section 7 Dependency Fitness Registry.
 
 ---
 
 ## 7. NAMING CONVENTIONS
 
-> Quy ước đặt tên xuyên suốt codebase. Agent phải tuân theo khi generate code.
+> Naming conventions throughout the codebase. Agents must adhere to these when generating code.
 
 📝 **FILL-IN**
 
-| Context | Convention | Ví dụ |
+| Context | Convention | Example |
 |---|---|---|
 | Schema names | `PascalCase` | `UserProfile`, `OrderItem` |
 | Field names | `snake_case` | `user_id`, `created_at` |
 | Constants | `SCREAMING_SNAKE` | `MAX_RETRY`, `DEFAULT_TIMEOUT` |
 | Functions | `snake_case` | `compute_score()`, `build_report()` |
-| Error codes | `SCREAMING_SNAKE` với prefix domain | `AUTH_INVALID_TOKEN`, `ORDER_NOT_FOUND` |
+| Error codes | `SCREAMING_SNAKE` with domain prefix | `AUTH_INVALID_TOKEN`, `ORDER_NOT_FOUND` |
 | File / module names | `snake_case` | `user_service.py`, `order_handler.ts` |
 | {{CONTEXT}} | `{{CONVENTION}}` | `{{EXAMPLE}}` |
 
 **Domain-specific rules:**
 
-📝 **FILL-IN:** Những quy tắc đặc thù của domain này mà agent không thể infer từ convention chung.
+📝 **FILL-IN:** Specific rules of this domain that agents cannot infer from general conventions.
 
 ```
-{{RULE_1}}: {{MÔ_TẢ}}
-  ✅ {{ĐÚNG}}
-  ❌ {{SAI}}
+{{RULE_1}}: {{DESCRIPTION}}
+  ✅ {{CORRECT}}
+  ❌ {{INCORRECT}}
 ```
 
 ---
 
 ## 8. SCHEMA CHANGELOG
 
-> Append-only. Mọi thay đổi schema đều phải có entry ở đây.
-> Breaking changes phải có ADR entry tương ứng trong ADR.md.
+> Append-only. Every schema change must have an entry here.
+> Breaking changes must have a corresponding ADR entry in ADR.md.
 > **Date format: YYYY-MM-DD (ISO 8601).**
 
-| Version | Date | Schema | Thay đổi | Breaking? | ADR Ref |
+| Version | Date | Schema | Change | Breaking? | ADR Ref |
 |---|---|---|---|---|---|
 | v1.0 | {{YYYY-MM-DD}} | — | Init schema registry | — | — |
 | 📝 | | | | | |
 
-> **Template một entry:**
-> `| v{{X.Y}} | {{YYYY-MM-DD}} | {{SCHEMA}} | {{ADDED/REMOVED/RENAMED/DEPRECATED}}: {{FIELD}} {{→ NEW_NAME/TYPE}} | {{CÓ/KHÔNG}} | ADR-{{N}} |`
+> **Template for an entry:**
+> `| v{{X.Y}} | {{YYYY-MM-DD}} | {{SCHEMA}} | {{ADDED/REMOVED/RENAMED/DEPRECATED}}: {{FIELD}} {{→ NEW_NAME/TYPE}} | {{YES/NO}} | ADR-{{N}} |`
 
 ---
 
 ## 9. DEPRECATION REGISTRY
 
-> Fields và schemas đang trong quá trình loại bỏ.
-> Entry ở đây: vẫn tồn tại trong schema definition nhưng **KHÔNG dùng cho logic mới**.
-> Code gen PHẢI emit deprecation warning khi gặp các fields/schemas trong registry này.
-> Removal là breaking change → bắt buộc có ADR entry trước khi xóa.
+> Fields and schemas in the process of being removed.
+> Entries here: still exist in the schema definition but **DO NOT use for new logic**.
+> Generated code MUST emit deprecation warnings when encountering fields/schemas in this registry.
+> Removal is a breaking change → an ADR entry is mandatory before deletion.
 
-📝 **FILL-IN** *(bỏ qua nếu chưa có deprecation nào)*
+📝 **FILL-IN** *(skip if there are no deprecations yet)*
 
-| Schema | Field / Schema bị deprecated | Deprecated since | Removal target | Migration path | ADR Ref |
+| Schema | Deprecated Field / Schema | Deprecated since | Removal target | Migration path | ADR Ref |
 |---|---|---|---|---|---|
-| `{{SCHEMA}}` | `{{field}}` | v{{X.Y}} | v{{X+1.0}} | Dùng `{{NEW_FIELD}}` thay thế | ADR-{{N}} |
-| `{{SCHEMA}}` | *(toàn bộ schema)* | v{{X.Y}} | v{{X+1.0}} | Dùng `{{NEW_SCHEMA}}` | ADR-{{N}} |
+| `{{SCHEMA}}` | `{{field}}` | v{{X.Y}} | v{{X+1.0}} | Use `{{NEW_FIELD}}` instead | ADR-{{N}} |
+| `{{SCHEMA}}` | *(entire schema)* | v{{X.Y}} | v{{X+1.0}} | Use `{{NEW_SCHEMA}}` | ADR-{{N}} |
 
-> **Lifecycle của một field/schema:**
+> **Lifecycle of a field/schema:**
 > ```
 > ACTIVE
 >   │
->   ├─[team quyết định loại bỏ]──▶ DEPRECATED ─── ghi vào registry này, bump minor version
+>   ├─[team decides to remove]──▶ DEPRECATED ─── log in this registry, bump minor version
 >   │                                   │
->   │                                   ├─[migration done, sau ≥1 release cycle]
+>   │                                   ├─[migration done, after ≥1 release cycle]
 >   │                                   ▼
->   │                               REMOVED ────── ghi vào Schema Changelog, bump major + ADR
+>   │                               REMOVED ────── log in Schema Changelog, bump major + ADR
 >   │
->   └─ Không được skip từ ACTIVE thẳng sang REMOVED nếu có consumer bên ngoài
+>   └─ Cannot skip directly from ACTIVE to REMOVED if there are external consumers
 > ```
 
 ---
 
 ## 10. GLOSSARY
 
-> Domain terms và abbreviations dùng trong schemas, comments, và pseudocode.
-> Agent PHẢI dùng đúng định nghĩa này khi generate code, docs, log messages, và error messages.
-> Nếu một term xuất hiện trong schema comment mà không có trong bảng này → thêm vào.
+> Domain terms and abbreviations used in schemas, comments, and pseudocode.
+> Agents MUST use these exact definitions when generating code, docs, log messages, and error messages.
+> If a term appears in a schema comment but is not in this table → add it.
 
-📝 **FILL-IN** *(bỏ qua nếu tất cả terms đều self-explanatory)*
+📝 **FILL-IN** *(skip if all terms are self-explanatory)*
 
-| Term | Định nghĩa | Không nhầm với | Status |
+| Term | Definition | Do not confuse with | Status |
 |---|---|---|---|
-| **{{TERM_1}}** | {{ĐỊNH_NGHĨA_CHÍNH_XÁC_THEO_BUSINESS_DOMAIN}} | `{{SIMILAR_TERM}}` — khác ở {{ĐIỂM_KHÁC_BIỆT}} | `STABLE` |
-| **{{TERM_2}}** | {{ĐỊNH_NGHĨA}} | — | `STABLE` |
-| **{{ABBR}}** | {{VIẾT_ĐẦY_ĐỦ}} ({{ĐỊNH_NGHĨA_NGẮN}}) | — | `STABLE` |
+| **{{TERM_1}}** | {{EXACT_DEFINITION_ACCORDING_TO_BUSINESS_DOMAIN}} | `{{SIMILAR_TERM}}` — differs in {{DIFFERENCE}} | `STABLE` |
+| **{{TERM_2}}** | {{DEFINITION}} | — | `STABLE` |
+| **{{ABBR}}** | {{FULL_FORM}} ({{SHORT_DEFINITION}}) | — | `STABLE` |
 
 > **Term Status:**
-> - `STABLE` — định nghĩa đã được chốt, không có debate (default)
-> - `CHALLENGED: xem ADR-N` — term đang bị debate; xem ADR-N để biết context và quyết định chính thức
+> - `STABLE` — definition is finalized, no debate (default)
+> - `CHALLENGED: see ADR-N` — term is being debated; see ADR-N for context and official decision
 >
-> Nếu hai người trong team định nghĩa cùng một term khác nhau → đây là Ubiquitous Language conflict:
->   1. Gắn status `CHALLENGED: xem ADR-N` cho term đó
->   2. Tạo ADR để document context, options, và quyết định chọn định nghĩa nào
->   3. Sau khi ADR ACCEPTED → update status → `STABLE`
+> If two people on the team define the same term differently → this is an Ubiquitous Language conflict:
+>   1. Set status to `CHALLENGED: see ADR-N` for that term
+>   2. Create an ADR to document the context, options, and decision on which definition to choose
+>   3. After ADR is ACCEPTED → update status → `STABLE`
 >
-> KHÔNG để term bị `CHALLENGED` quá lâu — unresolved term conflict là design failure đang hình thành.
+> DO NOT leave a term `CHALLENGED` for too long — an unresolved term conflict is a design failure in the making.
