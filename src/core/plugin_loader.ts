@@ -24,8 +24,10 @@ function parseList(raw: string): string[] {
 const TRUSTED_BUILT_IN_PLUGINS = new Set([
   "system.tool.ts",
   "system.tool.js",
-  "skills.tool.ts",   // DPS SuperSkills v5.2.1 skill runner
+  "skills.tool.ts",
   "skills.tool.js",
+  "knowledge.tool.ts",
+  "knowledge.tool.js",
 ]);
 
 function isTrustedBuiltInPlugin(fileName: string): boolean {

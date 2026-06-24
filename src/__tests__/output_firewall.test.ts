@@ -175,6 +175,33 @@ describe("output firewall", () => {
     expect(scanned.result.content[0].text).toContain("alice@example.com");
   });
 
+  test("flags hedge language as unverified claims", () => {
+    const scanned = scanToolOutput({
+      content: [{ type: "text", text: "The fix should work now and everything seems to pass." }],
+    });
+
+    expect(scanned.violations).toContain("HEDGE_LANGUAGE");
+    expect(scanned.result.content[0].text).toContain("[FLAGGED:HEDGE_LANGUAGE]");
+  });
+
+  test("flags unverified completion claims without evidence keywords", () => {
+    const scanned = scanToolOutput({
+      content: [{ type: "text", text: "The task is complete and ready for review." }],
+    });
+
+    expect(scanned.violations).toContain("UNVERIFIED_COMPLETION");
+    expect(scanned.result.content[0].text).toContain("[FLAGGED:UNVERIFIED_COMPLETION]");
+  });
+
+  test("does not flag completion claims that include evidence keywords", () => {
+    const scanned = scanToolOutput({
+      content: [{ type: "text", text: "The task is complete — all tests pass, Fix Anchor verified." }],
+    });
+
+    expect(scanned.violations).not.toContain("UNVERIFIED_COMPLETION");
+    expect(scanned.result.content[0].text).not.toContain("[FLAGGED:");
+  });
+
   test("validates SSN before redaction", () => {
     const scanned = scanToolOutput({
       content: [{ type: "text", text: "valid 123-45-6789 invalid 000-12-3456, 666-12-3456, 901-12-3456, 123-00-6789, 123-45-0000" }],

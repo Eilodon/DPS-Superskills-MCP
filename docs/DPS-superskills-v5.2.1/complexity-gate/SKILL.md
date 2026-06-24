@@ -85,6 +85,20 @@ Required:
 
 ---
 
+## Spec Requirements by Tier
+
+| Tier | Spec requirement |
+|------|-----------------|
+| C0 | No spec needed. Task description is sufficient. |
+| C1 | Inline spec: 3-5 bullet points in task description. No lifecycle. |
+| C2 | Lightweight spec: PROBLEM + SOLUTION + ACCEPTANCE CRITERIA. Single state: DRAFT → DONE. |
+| C3 | Standard spec: DRAFT → APPROVED → LIVING-SPEC. Run brainstorming with full checklist including Step 7b (DPS SYSTEM INTENT). |
+| C4 | Full lifecycle. Mandatory sign-off before each phase transition. All SYSTEM INTENT fields required. |
+
+C0-C2 tasks should not use the full DPS spec lifecycle — proportional ceremony prevents adoption drag.
+
+---
+
 ## Invariants Across All Tiers
 
 Never skip these:
@@ -106,6 +120,7 @@ No real learning lost after a cycle.
 COMPLEXITY GATE
 Scores: integration=<0-3>, data=<0-3>, irreversibility=<0-3>, blast=<0-3>, ambiguity=<0-3>
 Tier: C0|C1|C2|C3|C4
+Spec tier: none|inline|lightweight|standard|full
 Required skills:
 Optional skills:
 Reasoning:

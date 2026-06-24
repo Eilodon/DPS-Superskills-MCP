@@ -69,7 +69,7 @@ describe("formatSkillResponse — existing sections (no regressions)", () => {
       constraints: ["No shortcuts", "Evidence required"],
     });
     const text = formatSkillResponse(skill, { skill_name: "test-skill" });
-    expect(text).toContain("SKILL: TEST-SKILL  [TECHNIQUE]");
+    expect(text).toContain("SKILL: TEST-SKILL  [TECHNIQUE]  depth=full");
     expect(text).toContain("ANNOUNCE: Running test-skill");
     expect(text).toContain("GOAL: Verify behavior");
     expect(text).toContain("  • No shortcuts");
@@ -118,6 +118,104 @@ describe("formatSkillResponse — existing sections (no regressions)", () => {
     expect(text).not.toContain("OUTPUT TEMPLATE");
     expect(text).not.toContain("GOTCHAS");
     expect(text).not.toContain("NANO REFERENCE");
+  });
+});
+
+describe("formatSkillResponse — enforcement gates", () => {
+  it("includes enforcement gates for DISCIPLINE register skills", () => {
+    const skill = baseSkill({ register: "DISCIPLINE", name: "tdd-verified" });
+    const text = formatSkillResponse(skill, { skill_name: "tdd-verified" });
+    expect(text).toContain("ENFORCEMENT GATES");
+    expect(text).toContain("proof_mode_declared");
+    expect(text).toContain("failing_test_evidence");
+  });
+
+  it("includes pattern-globalize enforcement gate", () => {
+    const skill = baseSkill({ name: "pattern-globalize" });
+    const text = formatSkillResponse(skill, { skill_name: "pattern-globalize" });
+    expect(text).toContain("grep_executed");
+  });
+
+  it("omits enforcement gates for skills without specific gates", () => {
+    const skill = baseSkill({ name: "brainstorming", register: "TECHNIQUE" });
+    const text = formatSkillResponse(skill, { skill_name: "brainstorming" });
+    expect(text).not.toContain("ENFORCEMENT GATES");
+  });
+});
+
+describe("formatSkillResponse — depth parameter", () => {
+  const fullSkill = baseSkill({
+    announce: "Running test-skill",
+    goal: "Verify behavior",
+    constraints: ["No shortcuts", "Evidence required"],
+    checklist: ["Write a failing test", "Make it pass"],
+    commands: ["echo hi"],
+    outputTemplate: "STATUS: done",
+    nanoContent: "Compressed reference here",
+    gotchas: [
+      { claim: "Watch out for X", doInstead: "Do Y instead", status: "ACTIVE" },
+    ],
+  });
+
+  it("depth='nano' includes goal, nano reference, and gotcha claims but omits checklist/commands/output/announce", () => {
+    const text = formatSkillResponse(fullSkill, { skill_name: "test-skill", depth: "nano" });
+    expect(text).toContain("depth=nano");
+    expect(text).toContain("GOAL: Verify behavior");
+    expect(text).toContain("NANO REFERENCE:");
+    expect(text).toContain("Compressed reference here");
+    expect(text).toContain("Watch out for X");
+    expect(text).not.toContain("ANNOUNCE:");
+    expect(text).not.toContain("CHECKLIST");
+    expect(text).not.toContain("COMMANDS");
+    expect(text).not.toContain("OUTPUT TEMPLATE");
+    expect(text).not.toContain("DO INSTEAD");
+  });
+
+  it("depth='checklist' includes announce, goal, constraints, checklist, commands, gotchas with DO INSTEAD but omits output template and nano", () => {
+    const text = formatSkillResponse(fullSkill, { skill_name: "test-skill", depth: "checklist" });
+    expect(text).toContain("depth=checklist");
+    expect(text).toContain("ANNOUNCE: Running test-skill");
+    expect(text).toContain("GOAL: Verify behavior");
+    expect(text).toContain("CONSTRAINTS:");
+    expect(text).toContain("CHECKLIST");
+    expect(text).toContain("COMMANDS");
+    expect(text).toContain("DO INSTEAD: Do Y instead");
+    expect(text).not.toContain("OUTPUT TEMPLATE");
+    expect(text).not.toContain("NANO REFERENCE");
+  });
+
+  it("depth='full' includes everything (default behavior)", () => {
+    const text = formatSkillResponse(fullSkill, { skill_name: "test-skill", depth: "full" });
+    expect(text).toContain("depth=full");
+    expect(text).toContain("ANNOUNCE:");
+    expect(text).toContain("GOAL:");
+    expect(text).toContain("CHECKLIST");
+    expect(text).toContain("COMMANDS");
+    expect(text).toContain("OUTPUT TEMPLATE");
+    expect(text).toContain("NANO REFERENCE");
+    expect(text).toContain("DO INSTEAD");
+  });
+
+  it("defaults to full depth when depth is omitted", () => {
+    const text = formatSkillResponse(fullSkill, { skill_name: "test-skill" });
+    expect(text).toContain("depth=full");
+    expect(text).toContain("OUTPUT TEMPLATE");
+    expect(text).toContain("NANO REFERENCE");
+  });
+
+  it("depth='nano' shows fallback message when no nano content exists", () => {
+    const noNano = baseSkill({ goal: "Test goal" });
+    const text = formatSkillResponse(noNano, { skill_name: "test-skill", depth: "nano" });
+    expect(text).toContain('Use depth="checklist" or depth="full" for details');
+  });
+
+  it("depth='nano' still passes through caller context", () => {
+    const text = formatSkillResponse(fullSkill, {
+      skill_name: "test-skill",
+      depth: "nano",
+      task_description: "Fix the auth bug",
+    });
+    expect(text).toContain("Task: Fix the auth bug");
   });
 });
 
