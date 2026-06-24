@@ -79,6 +79,9 @@ export function execArgvForWorker(pluginPath?: string): string[] {
       `--allow-fs-read=${__dirname}`,
       "--no-addons",
     );
+    if (support === "experimental") {
+      argv.push("--no-warnings=ExperimentalWarning");
+    }
     if (pluginPath) argv.push(`--allow-fs-read=${pluginDirectory(pluginPath)}`);
   }
 
