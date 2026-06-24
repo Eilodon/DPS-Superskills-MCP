@@ -136,8 +136,9 @@ const skillRunTool: ToolDefinition = {
   description:
     "Invoke a DPS SuperSkill v5.2.1 with your task context. " +
     "Returns a structured workflow response: ANNOUNCE statement, GOAL, CONSTRAINTS, " +
-    "CHECKLIST (ready to execute), OUTPUT TEMPLATE (pre-labeled), active GOTCHAS with " +
-    "do-instead guidance, and NANO REFERENCE. " +
+    "CHECKLIST (ready to execute), COMMANDS (bash/sh blocks extracted from the skill, " +
+    "for you to run with your own shell tools), OUTPUT TEMPLATE (pre-labeled), active " +
+    "GOTCHAS with do-instead guidance, and NANO REFERENCE. " +
     "\n\nTip: Run skill_list first if unsure which skill to use. " +
     "Run complexity-gate before other skills for software tasks.",
   inputSchema: {
