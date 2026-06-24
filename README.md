@@ -23,7 +23,7 @@ Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject
 
 ### MCP Tools
 
-**Skills**
+**Skills** (`skills.tool.js` — 5 tools)
 
 | MCP Tool | Purpose |
 |---|---|
@@ -31,14 +31,23 @@ Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject
 | `skill_read` | Return the full SKILL.md content for a specific skill. Optionally include nano (compressed) version. |
 | `skill_run` | Invoke a skill with caller context. Returns the structured workflow (ANNOUNCE, GOAL, CONSTRAINTS, CHECKLIST, OUTPUT TEMPLATE, active GOTCHAS, NANO REFERENCE) scaled by `depth` (`nano` / `checklist` / `full`). Set `format="json"` to also receive a `structuredContent` payload for agent-to-agent dispatch. |
 | `skill_dispatch` | Generate a role-specific prompt template (implementer / reviewer / specialist) for spawning a focused subagent, pre-loaded with tier-appropriate skills and nano references. C0 tasks return a simplified "implement directly" prompt. |
+| `skill_search` | Search skills by keyword across names, descriptions, and registers. Use when unsure which skill applies — faster than reading `skill_list` manually. |
 
-**Knowledge base** (persistent cross-session memory)
+**Knowledge base** (`knowledge.tool.js` — 4 tools, persistent cross-session memory)
 
 | MCP Tool | Purpose |
 |---|---|
 | `kb_write` | Record a single knowledge entry (`gotcha` / `pattern-debt` / `domain-term` / `decision` / `bug-pattern`) to `docs/superskills/<category>.md`. Slug is validated as kebab-case. Active gotchas auto-inject into future `skill_run` responses. |
+| `kb_update` | Update an existing KB entry in-place by slug. Use when a gotcha or decision is no longer accurate and needs replacing. |
 | `kb_query` | Search the KB. Default returns a compact `id + 1-line summary` per match (token-efficient); pass `detail=true` for full entry bodies. Supports `category` filter and `limit`. |
 | `kb_health` | Report entry counts per category, flag stale entries (>90 days), and surface coverage gaps. |
+
+**System** (`system.tool.js` — 2 tools)
+
+| MCP Tool | Purpose |
+|---|---|
+| `super_mcp_ping` | Health check — confirm the server is alive and responding. |
+| `super_mcp_pattern_debt` | View the active pattern-debt registry. |
 
 ### 31 Skills Available
 
@@ -67,9 +76,11 @@ Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject
 ./install.sh
 ```
 
-### Manual Configuration (Claude Desktop / Cursor / Antigravity)
+### Manual Configuration (Claude Desktop / Claude Code / Cursor / Antigravity / Codex)
 
-If configuring manually, replace `<absolute-path-to>` with your actual full path:
+Replace `<absolute-path-to>` with your actual full path, or run `./install.sh` to get it pre-filled.
+
+> **`MCP_SAFE_MODE=false` is required** for `kb_write` / `kb_update` to function. In local `stdio` mode this is safe — no network exposure, no untrusted plugins.
 
 ```json
 {
@@ -80,9 +91,12 @@ If configuring manually, replace `<absolute-path-to>` with your actual full path
       "env": {
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",
-        "MCP_SAFE_MODE": "true",
+        "MCP_SAFE_MODE": "false",
         "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
-        "MCP_ENABLE_SKILL_RESOURCES": "true"
+        "MCP_PLUGIN_ISOLATION_MODE": "policy",
+        "MCP_ENABLE_SKILL_RESOURCES": "true",
+        "MCP_PROJECT_ID": "dps-superskills",
+        "MCP_TENANT_ID": "tenant_local"
       }
     }
   }
@@ -101,11 +115,35 @@ If configuring manually, replace `<absolute-path-to>` with your actual full path
         "env": {
           "TRANSPORT_DRIVER": "stdio",
           "STORAGE_DRIVER": "fs",
-          "MCP_SAFE_MODE": "true",
+          "MCP_SAFE_MODE": "false",
           "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
-          "MCP_ENABLE_SKILL_RESOURCES": "true"
+          "MCP_PLUGIN_ISOLATION_MODE": "policy",
+          "MCP_ENABLE_SKILL_RESOURCES": "true",
+          "MCP_PROJECT_ID": "dps-superskills",
+          "MCP_TENANT_ID": "tenant_local"
         }
       }
+    }
+  }
+}
+```
+
+### Cursor (`~/.cursor/mcp.json` or `.cursor/mcp.json`)
+
+```json
+{
+  "dps-superskills": {
+    "command": "node",
+    "args": ["<absolute-path-to>/DPS-Superskills/dist/index.js"],
+    "env": {
+      "TRANSPORT_DRIVER": "stdio",
+      "STORAGE_DRIVER": "fs",
+      "MCP_SAFE_MODE": "false",
+      "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+      "MCP_PLUGIN_ISOLATION_MODE": "policy",
+      "MCP_ENABLE_SKILL_RESOURCES": "true",
+      "MCP_PROJECT_ID": "dps-superskills",
+      "MCP_TENANT_ID": "tenant_local"
     }
   }
 }
@@ -116,9 +154,13 @@ If configuring manually, replace `<absolute-path-to>` with your actual full path
 ## Quick Start
 
 ```bash
+# Option A — auto build + print IDE configs with your absolute paths:
+./install.sh
+
+# Option B — manual:
 pnpm install --frozen-lockfile
 pnpm build
-# Server is now ready for MCP client connections via stdio
+# Then copy a config block from docs/MCP-CONNECT.md into your IDE
 ```
 
 ---
@@ -127,25 +169,27 @@ pnpm build
 
 ```text
 .
-├── docs/DPS-superskills-v5.2.1/    ← 31 skills content (SKILL.md + nano.md)
+├── docs/DPS-superskills-v5.2.1/         <- 31 skills content (SKILL.md + nano.md)
 │   ├── <skill-name>/SKILL.md
 │   ├── <skill-name>/<skill-name>.nano.md
-│   ├── shared/                 ← gotcha-schema, claim-grammar, etc.
+│   ├── shared/                          <- gotcha-schema, claim-grammar, etc.
 │   ├── bootstrap-templates/
 │   ├── quickstarts/
 │   ├── tools/
 │   └── README.md
+├── docs/MCP-CONNECT.md                  <- IDE connection guide (all configs)
+├── install.sh                           <- build + print IDE configs with abs paths
 └── src/
     ├── index.ts
-    ├── skills/                      ← DPS SuperSkills MCP bridge layer
-    │   ├── skill_loader.ts          ← SKILL.md / nano.md parser
-    │   ├── skill_registry.ts        ← 31-skill static registry
-    │   └── skill_executor.ts        ← structured workflow formatter
+    ├── skills/                          <- DPS SuperSkills MCP bridge layer
+    │   ├── skill_loader.ts              <- SKILL.md / nano.md parser + cache
+    │   ├── skill_registry.ts            <- 31-skill static registry
+    │   └── skill_executor.ts            <- structured workflow formatter
     ├── plugins/
-    │   ├── skills.tool.ts           ← skill_list, skill_read, skill_run, skill_dispatch
-    │   ├── knowledge.tool.ts        ← kb_write, kb_query, kb_health (persistent KB)
-    │   └── system.tool.ts           ← ping, pattern_debt, test_long_task
-    └── ...                          ← Layer 0 (SUPER-MCP runtime)
+    │   ├── skills.tool.ts               <- skill_list, skill_read, skill_run, skill_dispatch, skill_search
+    │   ├── knowledge.tool.ts            <- kb_write, kb_update, kb_query, kb_health
+    │   └── system.tool.ts               <- super_mcp_ping, super_mcp_pattern_debt
+    └── ...                              <- Layer 0 (SUPER-MCP runtime)
 ```
 
 By default the server reads skills from `<project_root>/docs/DPS-superskills-v5.2.1`. Override with:

@@ -50,7 +50,7 @@ const kbWriteTool: ToolDefinition = {
       .describe("Whether this entry can be included in anonymized cross-project telemetry. Default: false."),
   },
   allowedPhases: ["intake", "execution", "review", "completed"],
-  capabilities: ["fs.write"],
+  capabilities: ["kb.write"],
   annotations: {
     readOnlyHint: false,
     destructiveHint: false,
@@ -291,10 +291,106 @@ const kbHealthTool: ToolDefinition = {
   },
 };
 
+const kbUpdateTool: ToolDefinition = {
+  name: "kb_update",
+  description:
+    "Update an existing knowledge base entry by slug. " +
+    "Use when a gotcha, decision, or bug pattern has changed and the old record is stale. " +
+    "Replaces the matching entry in-place; preserves all other entries.",
+  inputSchema: {
+    category: z
+      .enum(KB_ENTRY_CATEGORIES)
+      .describe("The category of the entry to update."),
+    slug: z
+      .string()
+      .min(1)
+      .max(80)
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        "slug must be kebab-case.",
+      )
+      .describe("The slug of the entry to update (must already exist)."),
+    content: z
+      .string()
+      .describe("The new content to replace the existing entry with."),
+    source: z
+      .enum(["direct-observation", "code-review", "incident", "retrospective", "audit"])
+      .optional()
+      .describe("Updated source. Default: direct-observation."),
+  },
+  allowedPhases: ["intake", "execution", "review", "completed"],
+  capabilities: ["kb.write"],
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
+  execution: {
+    taskSupport: "forbidden",
+  },
+  handler: async (args) => {
+    const {
+      category,
+      slug,
+      content,
+      source = "direct-observation",
+    } = args as {
+      category: string;
+      slug: string;
+      content: string;
+      source?: string;
+    };
+
+    const dir = await ensureKbDir();
+    const filePath = path.join(dir, `${category}.md`);
+    const entryId = `KB-${category.toUpperCase()}-${slug}`;
+    const date = new Date().toISOString().slice(0, 10);
+
+    let existing = "";
+    try {
+      existing = await fs.readFile(filePath, "utf-8");
+    } catch {
+      return {
+        content: [{ type: "text", text: `[kb_update] Entry ${entryId} not found — category file does not exist. Use kb_write to create it.` }],
+      };
+    }
+
+    if (!existing.includes(entryId)) {
+      return {
+        content: [{ type: "text", text: `[kb_update] Entry ${entryId} not found. Use kb_write to create a new entry.` }],
+      };
+    }
+
+    const newEntry = [
+      `\n### ${entryId}`,
+      `- **date:** ${date}`,
+      `- **source:** ${source}`,
+      `- **shareable:** false`,
+      `- **content:** ${content}`,
+      "",
+    ].join("\n");
+
+    // Split on entry boundaries, replace the matching entry
+    const parts = existing.split(/(?=\n### KB-)/);
+    const updated = parts.map(part =>
+      part.includes(entryId) ? newEntry : part
+    ).join("");
+
+    await fs.writeFile(filePath, updated, "utf-8");
+    clearProjectContextCache();
+
+    return {
+      content: [{ type: "text", text: `[kb_update] Updated ${entryId} in ${category}.md (${date}, source: ${source}).` }],
+    };
+  },
+};
+
 const knowledgeTools: ToolDefinition[] = [
   kbWriteTool,
   kbQueryTool,
   kbHealthTool,
+  kbUpdateTool,
 ];
 
 export default knowledgeTools;

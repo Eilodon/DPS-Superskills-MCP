@@ -557,6 +557,76 @@ const skillDispatchTool: ToolDefinition = {
   },
 };
 
+// ── Tool 5: skill_search ────────────────────────────────────────────────────
+
+const skillSearchTool: ToolDefinition = {
+  name: "skill_search",
+  description:
+    "Search DPS SuperSkills v5.2.1 by keyword across skill names, descriptions, and registers. " +
+    "Use when you are unsure which skill to invoke — e.g. 'debug', 'test', 'review', 'spec', 'privacy'. " +
+    "Returns matching skills with descriptions and suggested-next routing hints. " +
+    "Faster than reading skill_list manually when you have a specific topic in mind.",
+  inputSchema: {
+    query: z
+      .string()
+      .min(1)
+      .describe(
+        "Keyword or phrase to search for across skill names, descriptions, and registers. " +
+        "Examples: 'debug', 'test', 'parallel', 'security', 'spec lifecycle'."
+      ),
+    register: z
+      .enum(["DISCIPLINE", "TECHNIQUE", "KNOWLEDGE LAYER", "REFERENCE"])
+      .optional()
+      .describe("Optional register filter to narrow results."),
+  },
+  allowedPhases: ["intake", "execution", "review", "completed"],
+  capabilities: [],
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
+  execution: {
+    taskSupport: "forbidden",
+  },
+  handler: async (args) => {
+    const { query, register } = args as { query: string; register?: string };
+
+    const queryLower = query.toLowerCase();
+    const results = SKILL_REGISTRY.filter(s => {
+      if (register && s.register !== register) return false;
+      return (
+        s.name.includes(queryLower) ||
+        s.description.toLowerCase().includes(queryLower) ||
+        s.register.toLowerCase().includes(queryLower)
+      );
+    });
+
+    if (results.length === 0) {
+      const suggestion = register
+        ? `Try removing the register filter, or use skill_list(register="${register}") to see all.`
+        : "Try skill_list() to see all 31 skills.";
+      return {
+        content: [{
+          type: "text",
+          text: `[skill_search] No skills found for "${query}". ${suggestion}`,
+        }],
+      };
+    }
+
+    const text = [
+      `[skill_search] ${results.length} skill(s) matching "${query}"${register ? ` in [${register}]` : ""}:`,
+      "",
+      formatSkillList(results),
+    ].join("\n");
+
+    return {
+      content: [{ type: "text", text }],
+    };
+  },
+};
+
 // ── Export ──────────────────────────────────────────────────────────────────
 
 const skillsTools: ToolDefinition[] = [
@@ -564,6 +634,7 @@ const skillsTools: ToolDefinition[] = [
   skillReadTool,
   skillRunTool,
   skillDispatchTool,
+  skillSearchTool,
 ];
 
 export default skillsTools;

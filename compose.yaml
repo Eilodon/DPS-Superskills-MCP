@@ -44,7 +44,7 @@ services:
       - MCP_ALLOW_LEGACY_SHA256_KDF=false
       - MCP_REDIS_MAX_BACKUPS=25
       - MCP_HTTP_BODY_LIMIT=100kb
-      - MCP_PLUGIN_ALLOWLIST=system.tool.js
+      - MCP_PLUGIN_ALLOWLIST=system.tool.js,skills.tool.js,knowledge.tool.js
       - MCP_PLUGIN_ISOLATION_MODE=policy
       - MCP_SAFE_MODE=true
     depends_on:
