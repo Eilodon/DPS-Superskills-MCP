@@ -23,11 +23,22 @@ Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject
 
 ### MCP Tools
 
+**Skills**
+
 | MCP Tool | Purpose |
 |---|---|
-| `skill_list` | List all 31 skills with descriptions and register (DISCIPLINE / TECHNIQUE / KNOWLEDGE LAYER / REFERENCE). Optionally filter by register. |
+| `skill_list` | List all 31 skills with descriptions, register (DISCIPLINE / TECHNIQUE / KNOWLEDGE LAYER / REFERENCE), and curated `suggested next:` routing hints. Optionally filter by register. |
 | `skill_read` | Return the full SKILL.md content for a specific skill. Optionally include nano (compressed) version. |
-| `skill_run` | Invoke a skill with caller context — returns structured workflow: ANNOUNCE, GOAL, CONSTRAINTS, CHECKLIST, OUTPUT TEMPLATE, active GOTCHAS, and NANO REFERENCE. |
+| `skill_run` | Invoke a skill with caller context. Returns the structured workflow (ANNOUNCE, GOAL, CONSTRAINTS, CHECKLIST, OUTPUT TEMPLATE, active GOTCHAS, NANO REFERENCE) scaled by `depth` (`nano` / `checklist` / `full`). Set `format="json"` to also receive a `structuredContent` payload for agent-to-agent dispatch. |
+| `skill_dispatch` | Generate a role-specific prompt template (implementer / reviewer / specialist) for spawning a focused subagent, pre-loaded with tier-appropriate skills and nano references. C0 tasks return a simplified "implement directly" prompt. |
+
+**Knowledge base** (persistent cross-session memory)
+
+| MCP Tool | Purpose |
+|---|---|
+| `kb_write` | Record a single knowledge entry (`gotcha` / `pattern-debt` / `domain-term` / `decision` / `bug-pattern`) to `docs/superskills/<category>.md`. Slug is validated as kebab-case. Active gotchas auto-inject into future `skill_run` responses. |
+| `kb_query` | Search the KB. Default returns a compact `id + 1-line summary` per match (token-efficient); pass `detail=true` for full entry bodies. Supports `category` filter and `limit`. |
+| `kb_health` | Report entry counts per category, flag stale entries (>90 days), and surface coverage gaps. |
 
 ### 31 Skills Available
 
@@ -131,7 +142,8 @@ pnpm build
     │   ├── skill_registry.ts        ← 31-skill static registry
     │   └── skill_executor.ts        ← structured workflow formatter
     ├── plugins/
-    │   ├── skills.tool.ts           ← skill_list, skill_read, skill_run tools
+    │   ├── skills.tool.ts           ← skill_list, skill_read, skill_run, skill_dispatch
+    │   ├── knowledge.tool.ts        ← kb_write, kb_query, kb_health (persistent KB)
     │   └── system.tool.ts           ← ping, pattern_debt, test_long_task
     └── ...                          ← Layer 0 (SUPER-MCP runtime)
 ```

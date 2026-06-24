@@ -159,8 +159,8 @@ describe("protocolHeaderValidation – rc2026 final mode", () => {
     expect(body.id).toBeNull();
   });
 
-  test("legacy/compat protocol modes are hard-disabled in this branch", async () => {
-    await expect(importMiddlewareWithMode("compat")).rejects.toThrow(/process.exit/);
-    await expect(importMiddlewareWithMode("legacy")).rejects.toThrow(/process.exit/);
-  });
+  // Coverage for legacy/compat protocol modes being rejected at env load time
+  // lives in env_validation.test.ts (MCP_PROTOCOL_MODE rejects 'compat' / 'legacy').
+  // The middleware here does not import env.js, so it cannot observe that
+  // rejection — duplicating the check from this file is not possible.
 });

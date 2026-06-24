@@ -35,9 +35,12 @@ describe("MCP server card", () => {
     expect(card.protocol.discoverMethod).toBe("server/discover");
     expect(card.extensions["io.modelcontextprotocol/tasks"].methods).toEqual(["tasks/get", "tasks/update", "tasks/cancel"]);
     expect(card.tools.some((entry: any) => entry.name === "check_task_status")).toBe(false);
-    expect(card._meta.security.pluginTrustBoundary).toBe("external-child-process-runner");
-    expect(card._meta.security.patternDebt.activeIds).toContain("DEBT-001");
-    expect(card._meta.security.patternDebt.activeIds).toContain("DEBT-005");
+    // MISS-4/I-4.3: pluginTrustBoundary, patternDebt, safeMode and friends are
+    // deliberately NOT exposed in the server card — they provide attacker
+    // reconnaissance. Only non-sensitive capability signals remain.
+    expect(card._meta.security.pluginTrustBoundary).toBeUndefined();
+    expect(card._meta.security.patternDebt).toBeUndefined();
+    expect(card._meta.security.toolCount).toBe(tools.length);
   });
 
   test("marks both jwt and oidc_jwks HTTP modes as resource servers", async () => {
