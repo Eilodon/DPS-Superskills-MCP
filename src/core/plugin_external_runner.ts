@@ -75,7 +75,7 @@ export function execArgvForWorker(pluginPath?: string): string[] {
     }
 
     argv.push(
-      "--permission",
+      support === "stable" ? "--permission" : "--experimental-permission",
       `--allow-fs-read=${__dirname}`,
       "--no-addons",
     );
