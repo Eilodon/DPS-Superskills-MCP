@@ -6,7 +6,7 @@ describe("Idempotency Manager", () => {
     const tenantId = "tenant-123";
     const toolName = "test_tool";
     
-    // Hai payload có cùng nội dung nhưng khác thứ tự key
+    // Two payloads with the same content but different key orders
     const args1 = { a: 1, b: 2 };
     const args2 = { b: 2, a: 1 };
     

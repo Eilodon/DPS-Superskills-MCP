@@ -1,6 +1,5 @@
 import { appendFile, rename, stat, mkdir, chmod } from "node:fs/promises";
 import { join } from "node:path";
-import * as os from "node:os";
 import { ENV } from "../config/env.js";
 import type { ITelemetryLogger } from "./interface.js";
 import { redact } from "./redaction.js";
@@ -19,7 +18,7 @@ export class FileLogger implements ITelemetryLogger {
   private queue: Promise<void> = Promise.resolve();
 
   constructor(options: { logDir?: string; maxBytes?: number; maxBackups?: number } = {}) {
-    this.logDir = options.logDir || join(os.homedir(), ".super_mcp", "logs");
+    this.logDir = options.logDir || join(ENV.MCP_DATA_DIR, "logs");
     this.logFile = join(this.logDir, "telemetry.jsonl");
     this.maxBytes = options.maxBytes || ENV.MCP_TELEMETRY_MAX_BYTES;
     this.maxBackups = options.maxBackups || ENV.MCP_TELEMETRY_MAX_BACKUPS;

@@ -50,7 +50,7 @@ export class RedisStore implements IStateStore {
       }
       return state;
     } catch (err) {
-      console.error(`[SUPER-MCP] Lỗi giải mã Redis state cho tenant: ${tenantId}`);
+      console.error(`[SUPER-MCP] Failed to decode Redis state for tenant: ${tenantId}`);
       throw err;
     }
   }

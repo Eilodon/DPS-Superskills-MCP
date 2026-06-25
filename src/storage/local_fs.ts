@@ -2,15 +2,15 @@ import { access, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs
 import { constants as fsConstants } from "node:fs";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
-import * as os from "node:os";
+import { ENV } from "../config/env.js";
 import type { IStateStore } from "./interface.js";
 import type { BaseState, Phase } from "../types/schemas.js";
 import { globalEncryption } from "./encryption.js";
 
 /**
- * Trích xuất từ VECTOR: Quản lý File System an toàn.
- * Tích hợp tự động rotate backup, phát hiện file corrupt và
- * Mutex Lock chống Race Condition khi có Request song song (Parallel Tool Calls).
+ * Extracted from VECTOR: Secure File System management.
+ * Integrated automatic backup rotation, corrupt file detection and
+ * Mutex Lock to prevent Race Condition during Parallel Tool Calls.
  */
 export class LocalFSStore implements IStateStore {
   private readonly maxBackups = 25;
@@ -18,7 +18,7 @@ export class LocalFSStore implements IStateStore {
   private locks = new Map<string, Promise<void>>();
 
   constructor() {
-    this.baseDir = join(os.homedir(), ".super_mcp", "data");
+    this.baseDir = join(ENV.MCP_DATA_DIR, "data");
   }
 
   private getTenantDir(tenantId: string): string {
@@ -45,7 +45,7 @@ export class LocalFSStore implements IStateStore {
   }
 
   /**
-   * Hàng đợi Mutex (Lock) để đảm bảo không có 2 luồng ghi file đồng thời
+   * Mutex Queue (Lock) to ensure no concurrent file writes
    */
   private async acquireLock<T>(tenantId: string, operation: () => Promise<T>): Promise<T> {
     const prevLock = this.locks.get(tenantId) || Promise.resolve();
@@ -71,7 +71,7 @@ export class LocalFSStore implements IStateStore {
     } catch (err) {
       const corruptPath = `${file}.corrupt_${Date.now()}`;
       await rename(file, corruptPath).catch(() => {});
-      throw new Error(`[SUPER-MCP] State file corrupt. Lỗi này đã bị cách ly ra file ${corruptPath}. Vui lòng khôi phục từ file backup (.bkp_).`, { cause: err });
+      throw new Error(`[SUPER-MCP] State file corrupt. Isolated to file ${corruptPath}. Please restore from backup (.bkp_).`, { cause: err });
     }
   }
 
@@ -82,9 +82,9 @@ export class LocalFSStore implements IStateStore {
       await this.ensureDir(dir);
       
       const encrypted = await globalEncryption.encryptState(state, state.tenantId);
-      const tmp = `${file}.tmp`; // Lưu vào tmp trước để tránh mất điện giữa chừng
+      const tmp = `${file}.tmp`; // Save to tmp first to avoid power loss corruption
       await writeFile(tmp, encrypted + "\n", { encoding: "utf-8", mode: 0o600 });
-      await rename(tmp, file); // Ghi đè nguyên tử (atomic rename)
+      await rename(tmp, file); // Atomic overwrite (atomic rename)
     });
   }
 
@@ -124,7 +124,7 @@ export class LocalFSStore implements IStateStore {
     } catch (err) {
       const corruptPath = `${join(dir, latest)}.corrupt_${Date.now()}`;
       await rename(join(dir, latest), corruptPath).catch(() => {});
-      throw new Error(`[SUPER-MCP] Backup file corrupt. Đã chuyển thành ${corruptPath}. Thử khôi phục từ bản cũ hơn.`, { cause: err });
+      throw new Error(`[SUPER-MCP] Backup file corrupt. Renamed to ${corruptPath}. Try restoring from an older version.`, { cause: err });
     }
   }
 

@@ -46,16 +46,16 @@ export default tseslint.config(
       "security/detect-possible-timing-attacks": "error",
 
       // Legitimate patterns for this project type — turn off false positives
-      "n/no-process-exit": "off",                           // server runtime cần process.exit
-      "security/detect-object-injection": "off",            // dynamic plugin system, không phải injection
+      "n/no-process-exit": "off",                           // server runtime requires process.exit
+      "security/detect-object-injection": "off",            // dynamic plugin system, not injection
       "security/detect-non-literal-require": "off",         // plugin loader dynamic imports
 
-      // Console discipline — telemetry đã có OTel + file logger
+      // Console discipline — telemetry already has OTel + file logger
       "no-console": ["warn", { allow: ["error", "warn"] }],
     },
   },
 
-  // stdout/stderr logger là console adapter hợp lệ
+  // stdout/stderr logger is a valid console adapter
   {
     files: ["src/telemetry/stdout_logger.ts", "src/telemetry/stderr_logger.ts"],
     rules: {
@@ -63,7 +63,7 @@ export default tseslint.config(
     },
   },
 
-  // File operations dùng biến làm path là hợp lệ — paths đến từ config nội bộ, không phải user input
+  // File operations using variable path is valid — paths come from internal config, not user input
   {
     files: [
       "src/telemetry/file_logger.ts",
@@ -93,10 +93,10 @@ export default tseslint.config(
     },
   },
 
-  // Files dùng `any` vì lý do kiến trúc hợp lệ:
-  // - SDK internals chưa được type đầy đủ (MCP alpha)
+  // Files using `any` for valid architectural reasons:
+  // - SDK internals not fully typed yet (MCP alpha)
   // - Worker IPC protocol (opaque message boundary)
-  // - JSON schema validation (schema type là any by design)
+  // - JSON schema validation (schema type is any by design)
   // - Express request internals
   {
     files: [
@@ -119,7 +119,7 @@ export default tseslint.config(
     },
   },
 
-  // Relax một số rule trong test files
+  // Relax some rules in test files
   {
     files: ["src/__tests__/**/*.ts"],
     rules: {

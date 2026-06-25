@@ -58,12 +58,29 @@ async function main() {
     );
   }
 
+  if (ENV.MCP_ALLOW_URL_API_KEY) {
+    console.error(
+      "[SUPER-MCP] WARNING: MCP_ALLOW_URL_API_KEY=true — the API key may be supplied " +
+      "in the URL path (/<key>/mcp) for header-less clients. The key then lives in client " +
+      "storage and may appear in proxy logs. Use only over HTTPS with a high-entropy key; " +
+      "prefer the x-api-key header or OAuth where the client supports it."
+    );
+  }
+
   if (ENV.TRANSPORT_DRIVER === "http") {
     const { StreamableHTTPServerTransport, createMcpExpressApp } = await loadHttpServerAdapters();
     const cors = (await import("cors")).default;
     const express = (await import("express")).default;
 
-    const app = createMcpExpressApp();
+    // Pass host so the SDK does NOT install its built-in localhostHostValidation.
+    // With the default (host="127.0.0.1") the SDK adds a host guard that ONLY
+    // allows Host: localhost/127.0.0.1/[::1] at the app root — running before our
+    // /health routes AND before our own ALLOWED_HOSTS middleware. Behind Fly that
+    // 403s everything: the proxy forwards Host: <app>.fly.dev for real MCP traffic
+    // and the health checker connects over the 6PN IPv6 address. Binding "::" makes
+    // the SDK skip its guard; our ALLOWED_HOSTS middleware (registered below, after
+    // the health routes) remains the real host protection for /mcp.
+    const app = createMcpExpressApp({ host: ENV.HTTP_HOST });
     const allowedOrigins = new Set(parseList(ENV.ALLOWED_ORIGINS));
     const allowedHosts = new Set(parseList(ENV.ALLOWED_HOSTS).map(h => h.toLowerCase()));
 
@@ -81,6 +98,28 @@ async function main() {
         res.status(503).json({ status: "not_ready", storage: ENV.STORAGE_DRIVER });
       }
     });
+
+    // Web clients whose connector UI has only a URL field (e.g. the claude.ai
+    // custom-connector form) cannot send the x-api-key header. When opt-in via
+    // MCP_ALLOW_URL_API_KEY, accept the key as the first path segment:
+    //   POST /<api_key>/mcp  ->  rewritten to /mcp with x-api-key injected.
+    // We never compare the token here — it is injected as the header and the
+    // standard /mcp pipeline validates it (constant-time) and rejects if wrong.
+    if (ENV.MCP_ALLOW_URL_API_KEY && ENV.MCP_AUTH_MODE === "api_key") {
+      app.use((req, _res, next) => {
+        const qIndex = req.url.indexOf("?");
+        const rawPath = qIndex === -1 ? req.url : req.url.slice(0, qIndex);
+        const query = qIndex === -1 ? "" : req.url.slice(qIndex);
+        const match = rawPath.match(/^\/([^/]+)\/mcp(\/.*)?$/);
+        if (match) {
+          if (!req.headers["x-api-key"]) {
+            req.headers["x-api-key"] = decodeURIComponent(match[1]);
+          }
+          req.url = "/mcp" + (match[2] ?? "") + query;
+        }
+        next();
+      });
+    }
 
     app.use((req, res, next) => {
       if (!isAllowedHost(req.headers.host, allowedHosts)) {
@@ -201,10 +240,10 @@ async function main() {
   }
 
   const shutdown = async (signal: string) => {
-    console.error(`\n[SUPER-MCP] Nhận tín hiệu ${signal}. Tiến hành tắt an toàn (Graceful Shutdown)...`);
+    console.error(`\n[SUPER-MCP] Received signal ${signal}. Proceeding with Graceful Shutdown...`);
     try {
       if ((runtime as any)._httpServer) {
-        console.error(`[SUPER-MCP] Đang đóng HTTP Server...`);
+        console.error(`[SUPER-MCP] Closing HTTP Server...`);
         await new Promise<void>((resolve, reject) => {
           (runtime as any)._httpServer.close((err: unknown) => err ? reject(err instanceof Error ? err : new Error("Server close failed", { cause: err })) : resolve());
         });
@@ -214,10 +253,10 @@ async function main() {
       globalTaskTracker.beginDraining();
       await globalTaskTracker.awaitAll(30000);
       await runtime.close();
-      console.error("[SUPER-MCP] Đã tắt an toàn.");
+      console.error("[SUPER-MCP] Graceful Shutdown complete.");
       process.exit(0);
     } catch (err) {
-      console.error("[SUPER-MCP] Lỗi khi tắt:", err);
+      console.error("[SUPER-MCP] Error during shutdown:", err);
       process.exit(1);
     }
   };

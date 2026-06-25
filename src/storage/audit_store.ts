@@ -1,6 +1,6 @@
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import * as os from "node:os";
+import { ENV } from "../config/env.js";
 import type { CryptoErasureReceipt } from "./key_registry.js";
 
 export interface IAuditStore {
@@ -24,7 +24,7 @@ export class FileAuditStore implements IAuditStore {
   private dirEnsured = false;
 
   constructor(projectId: string, baseDir?: string) {
-    const dir      = baseDir ?? join(os.homedir(), ".super_mcp", "audit", projectId);
+    const dir      = baseDir ?? join(ENV.MCP_DATA_DIR, "audit", projectId);
     this.filePath  = join(dir, "erasure-receipts.jsonl");
   }
 

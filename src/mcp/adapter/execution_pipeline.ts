@@ -94,7 +94,7 @@ function validateConfidence<T>(tool: ToolDefinition<T>, args: unknown): void {
     !hasObservableSignal
   ) {
     throw new ElicitationRequiredException({
-      message: `AI Confidence (${confidence}) is below threshold or reasoning lacks concrete observable safety signals. Cần người dùng xác nhận thủ công.`
+      message: `AI Confidence (${confidence}) is below threshold or reasoning lacks concrete observable safety signals. Manual confirmation required.`
     });
   }
 }
@@ -310,13 +310,13 @@ async function applyInvocationGovernance(toolName: string, tenantId: string, req
   const rateLimitResult = await globalRateLimiter.check(tenantId);
   if (!rateLimitResult.allowed) {
     await telemetry.log("rate_limit_exceeded", { tool: toolName, tenantId, requestId });
-    throw new Error(`[SUPER-MCP] Rate limit exceeded. Vui lòng thử lại sau ${rateLimitResult.retryAfterMs}ms.`);
+    throw new Error(`[SUPER-MCP] Rate limit exceeded. Please try again in ${rateLimitResult.retryAfterMs}ms.`);
   }
 
   const quotaResult = await globalQuotaManager.check(tenantId);
   if (!quotaResult.allowed) {
     await telemetry.log("quota_exceeded", { tool: toolName, tenantId, used: quotaResult.used, requestId });
-    throw new Error(`[SUPER-MCP] Quota exceeded. Bạn đã dùng hết ${quotaResult.used} requests hôm nay.`);
+    throw new Error(`[SUPER-MCP] Quota exceeded. You have used all ${quotaResult.used} requests today.`);
   }
 }
 
@@ -349,8 +349,8 @@ export function registerTools<T = Record<string, unknown>>(
     }
 
     if (tool.requireConfidence && !("confidence_level" in tool.inputSchema)) {
-      tool.inputSchema.confidence_level = z.number().min(0).max(1).describe("Độ tự tin của AI vào tính an toàn của tác vụ (0.0 đến 1.0)");
-      tool.inputSchema.reasoning = z.string().describe("Giải thích chi tiết tại sao hành động này là an toàn và không gây hại hệ thống");
+      tool.inputSchema.confidence_level = z.number().min(0).max(1).describe("AI confidence level in task safety (0.0 to 1.0)");
+      tool.inputSchema.reasoning = z.string().describe("Detailed explanation of why this action is safe and non-harmful to the system");
     }
 
     registerMcpTool(

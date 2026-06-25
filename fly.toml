@@ -14,10 +14,22 @@ primary_region = "sin"
 # MCP_API_KEY is set as a Fly secret (not here) — see deploy-fly.sh
 [env]
   TRANSPORT_DRIVER         = "http"
-  HTTP_HOST                = "0.0.0.0"
+  # MUST be "::" (IPv6 dual-stack), NOT "0.0.0.0". Fly Proxy + health checks reach
+  # the app over the private 6PN IPv6 network (fdaa::/…), so an IPv4-only 0.0.0.0
+  # socket gets "connection refused" and checks stay critical forever. "::" on
+  # Linux/Node accepts both IPv6 and IPv4-mapped connections.
+  HTTP_HOST                = "::"
   HTTP_PORT                = "3333"
   STORAGE_DRIVER           = "fs"
+  # Persist tenant state/audit on the mounted volume (see [[mounts]] below).
+  # Without this, fs state defaults to ~/.super_mcp on the ephemeral rootfs and
+  # is wiped on every machine restart/redeploy. ".runtime" is a hidden subdir of
+  # the volume so it never collides with the KB .md files at the mount root.
+  MCP_DATA_DIR             = "/app/docs/superskills/.runtime"
   MCP_AUTH_MODE            = "api_key"
+  # claude.ai web custom-connector form has only a URL field (no header input), so
+  # allow the API key in the URL path: https://<app>.fly.dev/<MCP_API_KEY>/mcp
+  MCP_ALLOW_URL_API_KEY    = "true"
   MCP_PLUGIN_ALLOWLIST     = "system.tool.js,skills.tool.js,knowledge.tool.js"
   MCP_PLUGIN_ISOLATION_MODE = "policy"
   MCP_SAFE_MODE            = "false"
@@ -47,7 +59,7 @@ primary_region = "sin"
   force_https         = true
   auto_stop_machines  = "stop"
   auto_start_machines = true
-  min_machines_running = 0       # set to 1 for always-on (costs ~$2/mo extra)
+  min_machines_running = 1
 
   [[http_service.checks]]
     grace_period = "30s"

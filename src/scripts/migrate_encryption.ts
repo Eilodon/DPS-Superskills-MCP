@@ -27,7 +27,9 @@ async function pathExists(path: string): Promise<boolean> {
 function getTenantDir(tenantId: string): string {
   const readable = tenantId.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 48) || "tenant";
   const digest = createHash("sha256").update(tenantId).digest("hex").slice(0, 16);
-  return join(os.homedir(), ".super_mcp", "data", `${readable}_${digest}`);
+  // Mirror LocalFSStore: data lives under MCP_DATA_DIR (default ~/.super_mcp).
+  const dataRoot = process.env.MCP_DATA_DIR ?? join(os.homedir(), ".super_mcp");
+  return join(dataRoot, "data", `${readable}_${digest}`);
 }
 
 function blobFormat(raw: string): string {

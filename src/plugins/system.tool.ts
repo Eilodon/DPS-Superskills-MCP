@@ -55,9 +55,9 @@ const systemTools: ToolDefinition[] = [
   },
   {
     name: "super_mcp_ping",
-    description: "Ping server để kiểm tra trạng thái và pipeline middlewares.",
+    description: "Ping server to check status and pipeline middlewares.",
     inputSchema: {
-      message: z.string().optional().describe("Tin nhắn ping"),
+      message: z.string().optional().describe("Ping message"),
     },
     allowedPhases: ["intake", "execution", "review", "completed"],
     capabilities: [],
@@ -86,7 +86,7 @@ const systemTools: ToolDefinition[] = [
     name: "super_mcp_test_long_task",
     description: "Test-only long-running tool for validating native MCP Tasks negotiation.",
     inputSchema: {
-      duration: z.number().min(0).max(300).optional().describe("Thời gian chạy mô phỏng (giây, tối đa 300)"),
+      duration: z.number().min(0).max(300).optional().describe("Simulated runtime (seconds, max 300)"),
     },
     allowedPhases: ["intake", "execution", "review", "completed"],
     capabilities: [],
@@ -104,7 +104,7 @@ const systemTools: ToolDefinition[] = [
       const ms = seconds * 1000;
       await abortableSleep(ms, signal);
       return {
-        content: [{ type: "text", text: `[SUPER-MCP] Task hoàn tất xuất sắc sau ${ms}ms!` }]
+        content: [{ type: "text", text: `[SUPER-MCP] Task completed successfully after ${ms}ms!` }]
       };
     }
   }

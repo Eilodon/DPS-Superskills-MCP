@@ -1,5 +1,7 @@
 import { config } from "dotenv";
 import { z } from "zod/v4";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 // Load .env without printing to stdout. Stdio MCP transports reserve stdout for protocol frames only.
 config({ quiet: true });
@@ -36,12 +38,26 @@ const EnvBoolean = (def: boolean) => z.preprocess(preprocessBoolean, z.boolean()
 
 const EnvSchema = z.object({
   STORAGE_DRIVER: z.enum(["fs", "redis", "memory"]).default("fs"),
+  // Root for all persistent runtime data written by the fs storage driver,
+  // audit store, and file telemetry logger (data/, audit/, logs/ live under it).
+  // Defaults to ~/.super_mcp for local dev. In containers/Fly, point this at a
+  // mounted volume so tenant state survives machine restarts and redeploys
+  // (otherwise fs state lands on the ephemeral rootfs and is lost every reboot).
+  MCP_DATA_DIR: z.string().default(join(homedir(), ".super_mcp")),
   TELEMETRY_DRIVER: z.enum(["file", "stdout", "stderr"]).default("file"),
   TRANSPORT_DRIVER: z.enum(["stdio", "http"]).default("stdio"),
   HTTP_HOST: z.string().default("127.0.0.1"),
   HTTP_PORT: z.preprocess(preprocessInt, z.number().int().min(1).max(65535).default(3333)),
   MCP_AUTH_MODE: z.enum(["api_key", "jwt", "oidc_jwks"]).default("api_key"),
   MCP_API_KEY: z.string().min(32).optional(),
+  // Opt-in: accept the API key as the first URL path segment (/<key>/mcp) in
+  // addition to the x-api-key header. Needed for clients whose UI has only a URL
+  // field and no custom-header input (e.g. the claude.ai web custom-connector
+  // form). api_key mode only. SECURITY: the key then lives in the URL, which the
+  // client stores and intermediary proxies may log — only enable behind HTTPS
+  // with a high-entropy key, and prefer the header or OAuth when the client
+  // supports it.
+  MCP_ALLOW_URL_API_KEY: EnvBoolean(false),
   MCP_JWT_SECRET: z.string().min(32).optional(),
   MCP_JWT_ISSUER: z.string().optional(),
   MCP_JWT_AUDIENCE: z.string().optional(),
@@ -175,12 +191,14 @@ function loadEnv() {
   const storageDriver = process.env.STORAGE_DRIVER || "fs";
   const rawEnv = {
     STORAGE_DRIVER: process.env.STORAGE_DRIVER,
+    MCP_DATA_DIR: process.env.MCP_DATA_DIR,
     TELEMETRY_DRIVER: process.env.TELEMETRY_DRIVER || ((process.env.TRANSPORT_DRIVER || "stdio") === "stdio" ? "stderr" : undefined),
     TRANSPORT_DRIVER: process.env.TRANSPORT_DRIVER,
     HTTP_HOST: process.env.HTTP_HOST,
     HTTP_PORT: process.env.HTTP_PORT,
     MCP_AUTH_MODE: process.env.MCP_AUTH_MODE,
     MCP_API_KEY: process.env.MCP_API_KEY,
+    MCP_ALLOW_URL_API_KEY: process.env.MCP_ALLOW_URL_API_KEY,
     MCP_JWT_SECRET: process.env.MCP_JWT_SECRET,
     MCP_JWT_ISSUER: process.env.MCP_JWT_ISSUER,
     MCP_JWT_AUDIENCE: process.env.MCP_JWT_AUDIENCE,
