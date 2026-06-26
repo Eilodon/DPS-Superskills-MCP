@@ -283,11 +283,15 @@ export interface ProjectContext {
 const KB_CATEGORIES = ["gotcha", "bug-pattern"] as const;
 const MAX_KB_INJECTED = 8;
 
-async function loadKnowledgeBaseHints(base: string): Promise<string[]> {
+function knowledgeBasePath(base: string): string {
+  return process.env.MCP_KB_PATH || path.join(base, "docs", "superskills");
+}
+
+async function loadKnowledgeBaseHints(kbPath: string): Promise<string[]> {
   const hints: string[] = [];
   for (const category of KB_CATEGORIES) {
     try {
-      const file = path.join(base, "docs", "superskills", `${category}.md`);
+      const file = path.join(kbPath, `${category}.md`);
       const content = await fs.readFile(file, "utf-8");
       const entries = content.split(/(?=^### KB-)/m);
       for (const entry of entries) {
@@ -317,23 +321,24 @@ export async function loadProjectContext(): Promise<ProjectContext> {
   }
 
   const base = path.resolve(skillsBasePath(), "..", "..");
+  const kbPath = knowledgeBasePath(base);
   const ctx: ProjectContext = { patternDebt: [], domainTerms: [], knowledgeGotchas: [] };
 
   try {
-    const debtPath = path.join(base, "docs", "superskills", "pattern-debt.md");
+    const debtPath = path.join(kbPath, "pattern-debt.md");
     const content = await fs.readFile(debtPath, "utf-8");
     const slugs = [...content.matchAll(/PATTERN-DEBT-([a-z0-9-]+)/g)];
     ctx.patternDebt = slugs.map(m => m[1]);
   } catch { /* file may not exist */ }
 
   try {
-    const ctxPath = path.join(base, "docs", "superskills", "CONTEXT.md");
+    const ctxPath = path.join(kbPath, "CONTEXT.md");
     const content = await fs.readFile(ctxPath, "utf-8");
     const terms = [...content.matchAll(/^\s*[-*]\s+\*\*(.+?)\*\*/gm)];
     ctx.domainTerms = terms.map(m => m[1]).slice(0, 10);
   } catch { /* file may not exist */ }
 
-  ctx.knowledgeGotchas = await loadKnowledgeBaseHints(base);
+  ctx.knowledgeGotchas = await loadKnowledgeBaseHints(kbPath);
 
   projectContextCache = { value: ctx, expiresAt: Date.now() + PROJECT_CONTEXT_TTL_MS };
   return ctx;

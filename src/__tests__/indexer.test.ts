@@ -7,7 +7,7 @@ import { BM25Index, tokenize } from "../core/indexer/bm25.js";
 import { chunkFile } from "../core/indexer/chunker.js";
 import { walk } from "../core/indexer/walker.js";
 import { saveIndex, loadIndex, loadMeta, clearIndex, indexDir } from "../core/indexer/store.js";
-import { buildIndex, searchIndex, indexStatus, resetIndex } from "../core/indexer/index.js";
+import { buildIndex, searchIndex, indexStatus, resetIndex, ensureFreshIndex } from "../core/indexer/index.js";
 
 const tmpDirs: string[] = [];
 function tmpRepo(): string {
@@ -263,6 +263,50 @@ describe("buildIndex + searchIndex", () => {
     const status = await indexStatus(root);
     expect(status.stale).toBe(true);
     expect(status.added).toBe(1);
+    await resetIndex(root);
+  });
+});
+
+describe("ensureFreshIndex", () => {
+  test("creates the index when missing (auto)", async () => {
+    const root = tmpRepo();
+    write(root, "src/a.ts", "export const alpha = 1;");
+    const r = await ensureFreshIndex(root, { auto: true });
+    expect(r.created).toBe(true);
+    expect(r.exists).toBe(true);
+    expect(await searchIndex(root, "alpha", 3)).not.toBeNull();
+    await resetIndex(root);
+  });
+
+  test("is a no-op when the index is already fresh", async () => {
+    const root = tmpRepo();
+    write(root, "src/a.ts", "export const alpha = 1;");
+    await ensureFreshIndex(root, { auto: true });
+    const r = await ensureFreshIndex(root, { auto: true });
+    expect(r.created).toBe(false);
+    expect(r.refreshed).toBe(false);
+    await resetIndex(root);
+  });
+
+  test("refreshes a stale index so new files become searchable", async () => {
+    const root = tmpRepo();
+    write(root, "src/a.ts", "export const alpha = 1;");
+    await ensureFreshIndex(root, { auto: true });
+    write(root, "src/beta.ts", "export function betaWidget() { return 2; }");
+    const r = await ensureFreshIndex(root, { auto: true });
+    expect(r.refreshed).toBe(true);
+    const res = await searchIndex(root, "betaWidget", 3);
+    expect(res!.hits[0].path).toBe("src/beta.ts");
+    await resetIndex(root);
+  });
+
+  test("with auto off, never writes and reports existence honestly", async () => {
+    const root = tmpRepo();
+    write(root, "src/a.ts", "export const alpha = 1;");
+    const r = await ensureFreshIndex(root, { auto: false });
+    expect(r.exists).toBe(false);
+    expect(r.created).toBe(false);
+    expect(await searchIndex(root, "alpha")).toBeNull();
     await resetIndex(root);
   });
 });

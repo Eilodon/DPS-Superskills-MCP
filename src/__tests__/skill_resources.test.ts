@@ -87,4 +87,16 @@ describe("skill resource registry", () => {
     expect(names).toContain("epistemic-health-check");
     expect(names).toContain("privacy-secrets-gate");
   });
+
+  it("registers MCP resources capability for initialize negotiation", async () => {
+    const { createMcpServer } = await import("../mcp/adapter/mcp_protocol_adapter.js");
+    const { registerSkillResources } = await import("../mcp/adapter/skill_resources.js");
+
+    const server = createMcpServer("test");
+    registerSkillResources(server);
+
+    expect(server.server.getCapabilities().resources).toEqual({
+      listChanged: false,
+    });
+  });
 });

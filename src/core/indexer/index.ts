@@ -424,6 +424,29 @@ export async function indexStatus(workspaceRoot: string): Promise<IndexStatus> {
   };
 }
 
+export interface EnsureResult {
+  exists: boolean;
+  created: boolean;   // index did not exist and was built now
+  refreshed: boolean; // index existed but was stale and rebuilt
+}
+
+/** Guarantee the index reflects the current files before a search. With auto on,
+ * builds when missing and incrementally rebuilds when stale (the no-op fast path
+ * makes the fresh case cheap). With auto off, reports state without writing. */
+export async function ensureFreshIndex(workspaceRoot: string, opts: { auto: boolean }): Promise<EnsureResult> {
+  const st = await indexStatus(workspaceRoot);
+  if (!opts.auto) return { exists: st.exists, created: false, refreshed: false };
+  if (!st.exists) {
+    await buildIndex(workspaceRoot);
+    return { exists: true, created: true, refreshed: false };
+  }
+  if (st.stale) {
+    await buildIndex(workspaceRoot);
+    return { exists: true, created: false, refreshed: true };
+  }
+  return { exists: true, created: false, refreshed: false };
+}
+
 export async function resetIndex(workspaceRoot: string): Promise<void> {
   cache.clear();
   await clearIndex(workspaceRoot);

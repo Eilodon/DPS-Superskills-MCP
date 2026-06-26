@@ -6,6 +6,9 @@ import { clearProjectContextCache } from "../skills/skill_executor.js";
 import type { ToolDefinition } from "../mcp/adapter/tool_registry.js";
 
 function kbBasePath(): string {
+  if (process.env.MCP_KB_PATH) {
+    return process.env.MCP_KB_PATH;
+  }
   const base = path.resolve(skillsBasePath(), "..", "..");
   return path.join(base, "docs", "superskills");
 }
@@ -347,7 +350,7 @@ const kbUpdateTool: ToolDefinition = {
     const entryId = `KB-${category.toUpperCase()}-${slug}`;
     const date = new Date().toISOString().slice(0, 10);
 
-    let existing = "";
+    let existing: string;
     try {
       existing = await fs.readFile(filePath, "utf-8");
     } catch {

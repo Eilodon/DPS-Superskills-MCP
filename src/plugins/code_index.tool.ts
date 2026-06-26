@@ -6,6 +6,7 @@ import {
   buildIndex,
   searchIndex,
   indexStatus,
+  ensureFreshIndex,
 } from "../core/indexer/index.js";
 
 /**
@@ -55,14 +56,13 @@ const codeSearchTool: ToolDefinition = {
     if (!root) return noWorkspace();
 
     const autoIndex = auto_index !== false && ENV.MCP_INDEX_AUTO;
-    let result = await searchIndex(root, query, top_k ?? 8);
-    let consentNote = "";
-    if (!result && autoIndex) {
-      await buildIndex(root);
-      // Transparency: announce the write into the user's repo (gitignored cache).
-      consentNote = `\n\n(Created a local index at ${root}/.dps/index/ — gitignored cache. Set MCP_INDEX_AUTO=false to disable auto-indexing.)`;
-      result = await searchIndex(root, query, top_k ?? 8);
-    }
+    // Auto-refresh when the index is missing OR stale (e.g. after dps_init
+    // scaffolds spec, or files changed) — incremental, ~no-op cost when fresh.
+    const fresh = await ensureFreshIndex(root, { auto: autoIndex });
+    const consentNote = fresh.created
+      ? `\n\n(Created a local index at ${root}/.dps/index/ — gitignored cache. Set MCP_INDEX_AUTO=false to disable auto-indexing.)`
+      : "";
+    const result = await searchIndex(root, query, top_k ?? 8);
     if (!result) {
       const why = autoIndex
         ? "Run code_index first."

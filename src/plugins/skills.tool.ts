@@ -480,7 +480,7 @@ const skillDispatchTool: ToolDefinition = {
       };
     }
 
-    let skills = [...config.skills];
+    const skills = [...config.skills];
     if (additional_skills) {
       const extras = additional_skills.split(",").map(s => s.trim()).filter(Boolean);
       for (const extra of extras) {
