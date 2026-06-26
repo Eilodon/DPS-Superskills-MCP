@@ -70,10 +70,10 @@ Script sẽ build và in sẵn cấu hình JSON cho từng IDE với đường d
 }
 ```
 
-Restart Claude Desktop → Tools panel hiển thị tất cả 10 tools.
+Restart Claude Desktop → Tools panel hiển thị tất cả 16 tools.
 
-> **Lưu ý `MCP_SAFE_MODE=false`**: Cần thiết để `kb_write` và `kb_update` hoạt động.
-> Với stdio local, đây là an toàn (không có third-party plugins, không exposed network).
+> **Lưu ý `MCP_SAFE_MODE=false`**: Chỉ cần cho `dps_check` (spawn `python3` — `process.spawn` bị chặn ở safe mode). `kb_write`/`kb_update` (capability `kb.write`) và `code_search`/`code_index`/`dps_init` chạy được dưới safe mode.
+> Với stdio local, safe mode là mặc định khuyến nghị; chỉ set `false` khi cần `dps_check`.
 
 ---
 
@@ -381,7 +381,7 @@ kb_health()
 
 | Triệu chứng | Nguyên nhân | Fix |
 |-------------|-------------|-----|
-| `kb_write` bị từ chối với "safe mode blocked" | `MCP_SAFE_MODE=true` | Set `MCP_SAFE_MODE=false` trong config |
+| `dps_check` không xuất hiện trong tools | `MCP_SAFE_MODE=true` chặn `process.spawn` | Set `MCP_SAFE_MODE=false` trong config |
 | Chỉ thấy `ping` và `pattern_debt`, không có skill tools | `MCP_PLUGIN_ALLOWLIST` sai | Thêm `skills.tool.js,knowledge.tool.js` vào allowlist |
 | Skills không load: "Skills directory not accessible" | `MCP_SKILLS_PATH` sai hoặc không build | Chạy `pnpm build`, hoặc set `MCP_SKILLS_PATH` đúng |
 | Resources không xuất hiện trong IDE | `MCP_ENABLE_SKILL_RESOURCES=false` | Set `MCP_ENABLE_SKILL_RESOURCES=true` |

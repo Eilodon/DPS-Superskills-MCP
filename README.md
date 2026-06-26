@@ -95,7 +95,7 @@ Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject
 
 Replace `<absolute-path-to>` with your actual full path, or run `./install.sh` to get it pre-filled.
 
-> **`MCP_SAFE_MODE=false` is required** for `kb_write` / `kb_update` and `dps_check` to function (they write KB files / spawn `python3`). In local `stdio` mode this is safe — no network exposure, no untrusted plugins. `code_search` / `code_index` / `dps_init` run fine under safe mode (they only write into the gitignored `<workspace>/.dps/`).
+> **`MCP_SAFE_MODE=false` is required** for `dps_check` (it spawns `python3` — `process.spawn` is blocked in safe mode). Everything else runs under safe mode: `kb_write` / `kb_update` use the local `kb.write` capability, and `code_search` / `code_index` / `dps_init` only write into the gitignored `<workspace>/.dps/` (`fs.write.workspace`). In local `stdio` mode safe mode is the recommended default; set it `false` only when you need `dps_check`.
 >
 > **`MCP_WORKSPACE_ROOT`** — the code retrieval + DPS tools operate on the user's project. Under `stdio` they default to the server's working directory (`process.cwd()`); if your IDE does not launch the server with the project as cwd, set `MCP_WORKSPACE_ROOT` to the absolute project path. Under `http` (remote/control-plane) the indexer disables itself.
 
