@@ -86,7 +86,7 @@ Multiple targets = write to primary; note secondary in the entry.
 
 ```bash
 # Gate: only run if DPS is present
-DPS_BLUEPRINT="docs/superskills/DPS_v5/BLUEPRINT.md"
+DPS_BLUEPRINT=".dps/spec/BLUEPRINT.md"
 if [ ! -f "$DPS_BLUEPRINT" ]; then
   echo "DPS absent — skip DPS Smell Mapping"
   # Continue to Step 6 (CONTEXT.md update)
@@ -108,7 +108,7 @@ Sau khi map findings vào Super Skills targets, cũng map sang DPS Smell Indicat
 
 ```bash
 # Check DPS for matching Smell Indicators:
-python3 docs/superskills/DPS_v5/tools/dps.py lint --strict 2>/dev/null
+python3 .dps/tools/dps.py lint --strict 2>/dev/null
 ```
 
 If DPS is LIVING-SPEC → update relevant sections directly.

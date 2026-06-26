@@ -46,7 +46,7 @@ read -r -d '' ENV_STDIO <<ENVEOF || true
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",
         "MCP_SAFE_MODE": "false",
-        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
         "MCP_PLUGIN_ISOLATION_MODE": "policy",
         "MCP_ENABLE_SKILL_RESOURCES": "true",
         "MCP_PROJECT_ID": "dps-superskills",

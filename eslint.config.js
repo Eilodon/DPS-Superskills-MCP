@@ -69,6 +69,8 @@ export default tseslint.config(
       "src/telemetry/file_logger.ts",
       "src/storage/local_fs.ts",
       "src/core/plugin_loader.ts",
+      "src/core/indexer/**/*.ts",
+      "src/core/dps/**/*.ts",
       "src/scripts/**/*.ts",
     ],
     rules: {

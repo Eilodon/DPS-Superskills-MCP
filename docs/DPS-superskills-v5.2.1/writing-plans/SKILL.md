@@ -26,7 +26,7 @@ If Gate Result = HOLD → return to `brainstorming`. Do not write a plan for an 
 
 ```bash
 # Check if DPS has build order:
-grep -c "PHASE 0" docs/superskills/DPS_v5/BLUEPRINT.md 2>/dev/null | xargs echo "DPS phases defined:"
+grep -c "PHASE 0" .dps/spec/BLUEPRINT.md 2>/dev/null | xargs echo "DPS phases defined:"
 ```
 
 If DPS APPROVED-SSOT AND Section 8 has phases filled:

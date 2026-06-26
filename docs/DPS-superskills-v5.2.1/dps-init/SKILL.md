@@ -18,13 +18,13 @@ description: Use after brainstorming SPEC_APPROVED=true to elevate spec into DPS
 
 ```bash
 # Confirm spec approved:
-grep "SPEC_APPROVED: true" docs/superskills/DPS_v5/lifecycle/drafts/*.md 2>/dev/null | tail -1
+grep "SPEC_APPROVED: true" .dps/lifecycle/drafts/*.md 2>/dev/null | tail -1
 
 # DPS already initialized?
-ls docs/superskills/DPS_v5/ 2>/dev/null && echo "⚠️  DPS already initialized — run dps-promote instead"
+ls .dps/ 2>/dev/null && echo "⚠️  DPS already initialized — run dps-promote instead"
 
-# tools/dps.py available?
-ls tools/dps.py 2>/dev/null || echo "⚠️  Missing dps.py — copy from framework"
+# dps.py available? (or use the dps_init / dps_check MCP tools instead)
+ls .dps/tools/dps.py 2>/dev/null || echo "⚠️  Missing dps.py — copy from framework or use dps_check tool"
 ```
 
 ---
@@ -32,9 +32,9 @@ ls tools/dps.py 2>/dev/null || echo "⚠️  Missing dps.py — copy from framew
 ## Step 1: Create DPS Directory
 
 ```bash
-mkdir -p docs/superskills/DPS_v5/.agent docs/superskills/DPS_v5/.dps docs/superskills/DPS_v5/tools
+mkdir -p .dps/spec .dps/agent .dps/tools
 # Copy dps.py from skills framework:
-cp ~/.claude/skills/dps-tools/dps.py docs/superskills/DPS_v5/tools/dps.py
+cp ~/.claude/skills/dps-tools/dps.py .dps/tools/dps.py
 ```
 
 ## Step 2: Scaffold SYSTEM INTENT Block
@@ -76,7 +76,7 @@ Use DPS ADR format — see `adr-commit/SKILL.md` Step 3.5 (DPS ADR format block)
 ## Step 6: Generate Sidecars
 
 ```bash
-cd docs/superskills/DPS_v5/
+cd .dps/
 python3 tools/dps.py sync
 python3 tools/dps.py check
 ```
@@ -91,7 +91,7 @@ DPS STATUS: DRAFT
 ## Step 8: Commit
 
 ```bash
-git add docs/superskills/DPS_v5/
+git add .dps/
 git commit -m "dps: initialize DPS structure from <spec-slug> [dps-init]"
 ```
 

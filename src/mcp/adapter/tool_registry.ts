@@ -7,7 +7,7 @@ export type ToolResult = {
   content: Array<{ type: "text"; text: string }>;
   structuredContent?: unknown;
 };
-export type ToolCapability = "fs.read" | "fs.write" | "kb.write" | "network" | "secrets.read" | "secrets.write" | "process.spawn" | "destructive";
+export type ToolCapability = "fs.read" | "fs.write" | "fs.write.workspace" | "kb.write" | "network" | "secrets.read" | "secrets.write" | "process.spawn" | "destructive";
 export interface ToolExecutionContext {
   taskId?: string;
   requestInput?: (message?: string) => Promise<unknown>;

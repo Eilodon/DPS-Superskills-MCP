@@ -46,7 +46,7 @@ grep -c "## Risk Assessment (audit-design)" docs/superskills/specs/<spec-file>.m
 
 ```bash
 # Check if DPS is present and status:
-DPS_STATUS=$(grep "DPS STATUS:" docs/superskills/DPS_v5/BLUEPRINT.md 2>/dev/null | head -1 | awk '{print $NF}')
+DPS_STATUS=$(grep "DPS STATUS:" .dps/spec/BLUEPRINT.md 2>/dev/null | head -1 | awk '{print $NF}')
 echo "DPS STATUS: ${DPS_STATUS:-NOT_PRESENT}"
 ```
 
@@ -111,19 +111,19 @@ Mechanical checks (fast, < 2 min):
 
 ```bash
 # 1. Single-definition rule: no schema defined in multiple places
-grep -rn "^### " docs/superskills/DPS_v5/CONTRACTS.md | awk -F: '{print $NF}' | sort | uniq -d
+grep -rn "^### " .dps/spec/CONTRACTS.md | awk -F: '{print $NF}' | sort | uniq -d
 
 # 2. Broken Ref<X>: every Ref<X> in BLUEPRINT resolves to CONTRACTS
-grep -o "Ref<[^>]*>" docs/superskills/DPS_v5/BLUEPRINT.md | sort | uniq | while read ref; do
+grep -o "Ref<[^>]*>" .dps/spec/BLUEPRINT.md | sort | uniq | while read ref; do
   schema=$(echo "$ref" | sed 's/Ref<\(.*\)>/\\1/')
-  grep -q "$schema" docs/superskills/DPS_v5/CONTRACTS.md || echo "BROKEN: $ref"
+  grep -q "$schema" .dps/spec/CONTRACTS.md || echo "BROKEN: $ref"
 done
 
 # 3. Version sync: all 4 files have matching status/profile
-grep "DPS STATUS:" docs/superskills/DPS_v5/{README,CONTRACTS,BLUEPRINT,ADR}.md 2>/dev/null
+grep "DPS STATUS:" .dps/spec/{README,CONTRACTS,BLUEPRINT,ADR}.md 2>/dev/null
 
 # 4. Run DPS linter if available:
-python3 docs/superskills/DPS_v5/tools/dps.py lint --strict 2>/dev/null || echo "dps.py not available — skip"
+python3 .dps/tools/dps.py lint --strict 2>/dev/null || echo "dps.py not available — skip"
 ```
 
 Record DPS structural findings in Risk Assessment output:

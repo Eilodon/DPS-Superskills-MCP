@@ -56,9 +56,9 @@ git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null
 
 Choose output target:
 ```bash
-# DPS present? → append to docs/superskills/DPS_v5/ADR.md
+# DPS present? → append to .dps/spec/ADR.md
 # DPS absent?  → standalone file (legacy format, unchanged)
-ls docs/superskills/DPS_v5/ADR.md 2>/dev/null && echo "DPS mode" || echo "Standalone mode"
+ls .dps/spec/ADR.md 2>/dev/null && echo "DPS mode" || echo "Standalone mode"
 ```
 
 **DPS ADR format (khi DPS present):**
@@ -178,10 +178,10 @@ git add docs/superskills/adrs/
 git commit -m "docs: add ADR for <feature-slug>"
 
 # If DPS:
-cd docs/superskills/DPS_v5/
+cd .dps/
 python3 tools/dps.py sync
 python3 tools/dps.py check
-git add docs/superskills/DPS_v5/
+git add .dps/
 git commit -m "dps: sync sidecars after ADR-{{N}} [adr-commit]"
 ```
 **Auto-promote if DPS APPROVED-SSOT:**
@@ -202,7 +202,7 @@ Prevents "aspirational ADR" — decisions documented that don't match implementa
 # Component names in ADR IMPACT RADIUS still exist in code?
 # Schema names still match implementation?
 # Any Ref<X> broken after this implementation?
-python3 docs/superskills/DPS_v5/tools/dps.py check 2>/dev/null
+python3 .dps/tools/dps.py check 2>/dev/null
 ```
 
 ```bash

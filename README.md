@@ -42,6 +42,21 @@ Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject
 | `kb_query` | Search the KB. Default returns a compact `id + 1-line summary` per match (token-efficient); pass `detail=true` for full entry bodies. Supports `category` filter and `limit`. |
 | `kb_health` | Report entry counts per category, flag stale entries (>90 days), and surface coverage gaps. |
 
+**Code retrieval** (`code_index.tool.js` — 3 tools, local data-plane over the user's repo)
+
+| MCP Tool | Purpose |
+|---|---|
+| `code_search` | Semantic-ish local code search (native zero-dependency BM25 + symbol/path/proximity rerank). Use **instead of grep+read** to locate where something is implemented — returns the most relevant chunks as `path:line` + a match-centred preview, typically **~80–97% fewer tokens**. Auto-builds the index on first use (gitignored cache in `<workspace>/.dps/index/`; disable with `MCP_INDEX_AUTO=false`). Fuses DPS spec files (`source=spec`) when present. |
+| `code_index` | Build / incrementally refresh the local index. Only changed files (size+mtime) are re-read; a no-op refresh short-circuits in ~25ms. |
+| `code_index_status` | Report whether the index exists, its manifest, and how stale it is (added/modified/removed files). |
+
+**DPS living-spec** (`dps.tool.js` — 2 tools)
+
+| MCP Tool | Purpose |
+|---|---|
+| `dps_init` | Initialize/inject the 4 DPS living-spec files (README/CONTRACTS/BLUEPRINT/ADR) into `<workspace>/.dps/spec/` from the bootstrap templates. Detects an existing spec and asks for consent (MCP elicitation, or explicit `confirm=true`). Pure filesystem → runs under safe mode. |
+| `dps_check` | Validate the DPS spec via `dps.py` (every `Ref<X>` resolves to CONTRACTS, single-definition rule, version sync). Requires `python3` (degrades to a manual checklist). Spawns a process → **disabled under `MCP_SAFE_MODE=true`**. |
+
 **System** (`system.tool.js` — 2 tools)
 
 | MCP Tool | Purpose |
@@ -80,7 +95,9 @@ Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject
 
 Replace `<absolute-path-to>` with your actual full path, or run `./install.sh` to get it pre-filled.
 
-> **`MCP_SAFE_MODE=false` is required** for `kb_write` / `kb_update` to function. In local `stdio` mode this is safe — no network exposure, no untrusted plugins.
+> **`MCP_SAFE_MODE=false` is required** for `kb_write` / `kb_update` and `dps_check` to function (they write KB files / spawn `python3`). In local `stdio` mode this is safe — no network exposure, no untrusted plugins. `code_search` / `code_index` / `dps_init` run fine under safe mode (they only write into the gitignored `<workspace>/.dps/`).
+>
+> **`MCP_WORKSPACE_ROOT`** — the code retrieval + DPS tools operate on the user's project. Under `stdio` they default to the server's working directory (`process.cwd()`); if your IDE does not launch the server with the project as cwd, set `MCP_WORKSPACE_ROOT` to the absolute project path. Under `http` (remote/control-plane) the indexer disables itself.
 
 ```json
 {
@@ -92,7 +109,7 @@ Replace `<absolute-path-to>` with your actual full path, or run `./install.sh` t
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",
         "MCP_SAFE_MODE": "false",
-        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
         "MCP_PLUGIN_ISOLATION_MODE": "policy",
         "MCP_ENABLE_SKILL_RESOURCES": "true",
         "MCP_PROJECT_ID": "dps-superskills",
@@ -116,7 +133,7 @@ Replace `<absolute-path-to>` with your actual full path, or run `./install.sh` t
           "TRANSPORT_DRIVER": "stdio",
           "STORAGE_DRIVER": "fs",
           "MCP_SAFE_MODE": "false",
-          "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+          "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
           "MCP_PLUGIN_ISOLATION_MODE": "policy",
           "MCP_ENABLE_SKILL_RESOURCES": "true",
           "MCP_PROJECT_ID": "dps-superskills",
@@ -139,7 +156,7 @@ Replace `<absolute-path-to>` with your actual full path, or run `./install.sh` t
       "TRANSPORT_DRIVER": "stdio",
       "STORAGE_DRIVER": "fs",
       "MCP_SAFE_MODE": "false",
-      "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+      "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
       "MCP_PLUGIN_ISOLATION_MODE": "policy",
       "MCP_ENABLE_SKILL_RESOURCES": "true",
       "MCP_PROJECT_ID": "dps-superskills",
@@ -188,14 +205,37 @@ pnpm build
     ├── plugins/
     │   ├── skills.tool.ts               <- skill_list, skill_read, skill_run, skill_dispatch, skill_search
     │   ├── knowledge.tool.ts            <- kb_write, kb_update, kb_query, kb_health
+    │   ├── code_index.tool.ts           <- code_search, code_index, code_index_status
+    │   ├── dps.tool.ts                  <- dps_init, dps_check
     │   └── system.tool.ts               <- super_mcp_ping, super_mcp_pattern_debt
+    ├── core/indexer/                    <- zero-dep BM25 code retrieval (walker, chunker, bm25, store)
+    ├── core/dps/                        <- DPS spec scaffold + dps.py wrapper (init.ts)
     └── ...                              <- Layer 0 (SUPER-MCP runtime)
+```
+
+At runtime, the code-retrieval + DPS tools materialize a folder inside the **user's own project** (never this repo):
+
+```text
+<user-project>/.dps/
+├── spec/        <- DPS living-spec: README/CONTRACTS/BLUEPRINT/ADR.md (tracked)
+├── agent/       <- generated projection sidecars (tracked)
+├── index/       <- local code index cache (gitignored)
+└── DPS_INDEX.yml, DPS_LOCK.yml
 ```
 
 By default the server reads skills from `<project_root>/docs/DPS-superskills-v5.2.1`. Override with:
 
 ```env
 MCP_SKILLS_PATH=/custom/path/to/skills
+```
+
+Code-retrieval / DPS tools:
+
+```env
+# Project root the indexer + DPS tools operate on (defaults to cwd under stdio).
+MCP_WORKSPACE_ROOT=/abs/path/to/your/project
+# Set false to stop code_search from auto-building the index on first use.
+MCP_INDEX_AUTO=true
 ```
 
 ---

@@ -15,7 +15,7 @@ description: Use to advance DPS lifecycle status — from DRAFT to PROOF-READY, 
 
 ```bash
 # Current status:
-grep "DPS STATUS" docs/superskills/DPS_v5/README.md docs/superskills/DPS_v5/BLUEPRINT.md 2>/dev/null | head -4
+grep "DPS STATUS" .dps/spec/README.md .dps/spec/BLUEPRINT.md 2>/dev/null | head -4
 ```
 
 ---
@@ -40,9 +40,9 @@ Gate checklist:
 Action:
 ```bash
 # Update status in all 4 canonical files:
-python3 docs/superskills/DPS_v5/tools/dps.py sync  # generates sidecars
-python3 docs/superskills/DPS_v5/tools/dps.py check # verifies consistency
-git add docs/superskills/DPS_v5/
+python3 .dps/tools/dps.py sync  # generates sidecars
+python3 .dps/tools/dps.py check # verifies consistency
+git add .dps/
 git commit -m "dps: promote DRAFT → PROOF-READY [dps-promote]"
 ```
 
@@ -76,9 +76,9 @@ Action:
 ```bash
 # 1. Edit promotion record in README.md, then update status in all 4 canonical files
 # 2. Regenerate sidecars and verify:
-python3 docs/superskills/DPS_v5/tools/dps.py sync
-python3 docs/superskills/DPS_v5/tools/dps.py check
-git add docs/superskills/DPS_v5/
+python3 .dps/tools/dps.py sync
+python3 .dps/tools/dps.py check
+git add .dps/
 git commit -m "dps: promote PROOF-READY → APPROVED-SSOT [dps-promote]"
 ```
 
@@ -92,9 +92,9 @@ Action:
 ```bash
 # Update DPS STATUS in all 4 canonical files: APPROVED-SSOT → IMPLEMENTATION-ACTIVE
 # Then regenerate sidecars:
-python3 docs/superskills/DPS_v5/tools/dps.py sync
-python3 docs/superskills/DPS_v5/tools/dps.py check
-git add docs/superskills/DPS_v5/
+python3 .dps/tools/dps.py sync
+python3 .dps/tools/dps.py check
+git add .dps/
 git commit -m "dps: promote APPROVED-SSOT → IMPLEMENTATION-ACTIVE [adr-commit]"
 ```
 

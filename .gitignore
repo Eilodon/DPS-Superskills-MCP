@@ -5,3 +5,4 @@ dist/
 .claude/
 .mcp-telemetry/
 *.log
+.dps/

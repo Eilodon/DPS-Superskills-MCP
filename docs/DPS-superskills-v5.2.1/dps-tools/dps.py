@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 """DPS sync/check/lint tool.
 
-Canonical inputs:
-- README.md
-- CONTRACTS.md
-- BLUEPRINT.md
-- ADR.md
+Run from the `.dps/` directory (cwd). On-disk layout under .dps/:
+  spec/    canonical inputs: README.md, CONTRACTS.md, BLUEPRINT.md, ADR.md
+  agent/   generated projection: AGENTS.md, CONTEXT.md, INVARIANTS.md, STACK.md,
+           TASKS.md, REVIEW_CHECKS.md
+  DPS_INDEX.yml, DPS_LOCK.yml   generated, at the .dps/ root
 
-Generated outputs:
-- DPS_INDEX.yml
-- .agent/*.md
-- .dps/DPS_LOCK.yml
+Logical paths in this code stay as bare names (README.md, .agent/AGENTS.md);
+to_fs() maps them to the on-disk locations above.
 
-Usage:
+Usage (from the .dps/ directory):
   ./tools/dps.py sync
   ./tools/dps.py check
   ./tools/dps.py lint --strict
@@ -46,6 +44,25 @@ GENERATED_FILES = [
     ".agent/REVIEW_CHECKS.md",
     ".dps/DPS_LOCK.yml",
 ]
+CANONICAL_SET = set(CANONICAL_FILES)
+SPEC_DIR = "spec"
+AGENT_DIR = "agent"
+
+
+def to_fs(rel: str) -> str:
+    """Map a logical DPS path to its on-disk location, relative to the .dps/ root
+    that dps.py is run from: canonical files live in spec/, the agent projection
+    in agent/, and the lock at the .dps/ root. Logical keys elsewhere in the code
+    stay as bare names (README.md, .agent/AGENTS.md) — only IO goes through here."""
+    if rel in CANONICAL_SET:
+        return f"{SPEC_DIR}/{rel}"
+    if rel.startswith(".agent/"):
+        return f"{AGENT_DIR}/{rel[len('.agent/'):]}"
+    if rel == ".dps/DPS_LOCK.yml":
+        return "DPS_LOCK.yml"
+    return rel
+
+
 IMPLEMENTATION_READY_STATUSES = {"APPROVED-SSOT", "IMPLEMENTATION-ACTIVE", "LIVING-SPEC"}
 VALID_STATUSES = {"DRAFT", "PROOF-READY", "APPROVED-SSOT", "IMPLEMENTATION-ACTIVE", "LIVING-SPEC", "SUPERSEDED"}
 
@@ -102,14 +119,14 @@ class DPSModel:
 
 
 def read_text(root: Path, rel: str) -> str:
-    p = root / rel
+    p = root / to_fs(rel)
     if not p.exists():
         raise FileNotFoundError(f"Missing required file: {rel}")
     return p.read_text(encoding="utf-8")
 
 
 def write_text(root: Path, rel: str, content: str) -> None:
-    p = root / rel
+    p = root / to_fs(rel)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content, encoding="utf-8", newline="\n")
 
@@ -871,7 +888,7 @@ def sync(root: Path) -> int:
 def check_generated_headers(root: Path) -> List[str]:
     problems = []
     for rel in GENERATED_FILES:
-        p = root / rel
+        p = root / to_fs(rel)
         if not p.exists():
             problems.append(f"missing generated output: {rel}")
             continue
@@ -888,7 +905,7 @@ def check(root: Path, show_diff: bool = True) -> int:
     problems.extend(meta_problems)
     problems.extend(check_generated_headers(root))
     for rel, expected_text in expected.items():
-        p = root / rel
+        p = root / to_fs(rel)
         if not p.exists():
             problems.append(f"missing generated output: {rel}")
             continue
@@ -1213,7 +1230,7 @@ def lint_model(root: Path, strict: bool = False, project_mode: bool = False) -> 
     # Strict still allows blank template placeholders, but checks generated outputs exist.
     if strict:
         for rel in GENERATED_FILES:
-            if not (root / rel).exists():
+            if not (root / to_fs(rel)).exists():
                 problems.append(f"strict mode missing generated file: {rel}")
 
     return unique_messages(problems)

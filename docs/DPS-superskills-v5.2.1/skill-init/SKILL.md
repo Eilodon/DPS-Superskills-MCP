@@ -67,13 +67,13 @@ Default behavior is DRY-RUN. Do not move or delete any existing DPS directory un
 
 ```bash
 # Scan for any file containing "DPS STATUS:" outside the standard directory
-MISPLACED_DPS_FILE=$(grep -rl "DPS STATUS:" .   --exclude-dir=.git --exclude-dir=node_modules   --exclude-dir=.worktrees --exclude-dir=.venv   | grep -v "docs/superskills/DPS_v5" | head -n 1)
+MISPLACED_DPS_FILE=$(grep -rl "DPS STATUS:" .   --exclude-dir=.git --exclude-dir=node_modules   --exclude-dir=.worktrees --exclude-dir=.venv   | grep -v ".dps" | head -n 1)
 
 if [ -n "$MISPLACED_DPS_FILE" ]; then
     MISPLACED_DIR=$(dirname "$MISPLACED_DPS_FILE")
     echo "WARNING: existing DPS detected at non-standard path: $MISPLACED_DIR"
-    echo "Target path: docs/superskills/DPS_v5"
-    echo "DRY-RUN: would run: mkdir -p docs/superskills && mv '$MISPLACED_DIR' docs/superskills/DPS_v5"
+    echo "Target path: .dps"
+    echo "DRY-RUN: would run: mkdir -p docs/superskills && mv '$MISPLACED_DIR' .dps"
 
     if [ "${APPLY:-false}" != "true" ]; then
         echo "No files moved. Re-run with APPLY=true only after confirming this is the intended DPS folder."
@@ -81,8 +81,8 @@ if [ -n "$MISPLACED_DPS_FILE" ]; then
     fi
 
     mkdir -p docs/superskills/
-    [ -d docs/superskills/DPS_v5 ] && [ -z "$(ls -A docs/superskills/DPS_v5)" ] && rmdir docs/superskills/DPS_v5
-    mv "$MISPLACED_DIR" docs/superskills/DPS_v5
+    [ -d .dps ] && [ -z "$(ls -A .dps)" ] && rmdir .dps
+    mv "$MISPLACED_DIR" .dps
 fi
 ```
 
@@ -104,15 +104,15 @@ ls docs/superskills/
 ## Step 2b: DPS Scaffold (Optional — recommended for non-trivial projects)
 
 ```bash
-mkdir -p docs/superskills/DPS_v5/.agent docs/superskills/DPS_v5/.dps docs/superskills/DPS_v5/tools
+mkdir -p .dps/agent .dps .dps/tools
 
 # Create blank DPS canonical files (DRAFT status):
 # Copy DPS v5 templates from framework without overwriting existing files (-n)
-cp -n ~/.claude/skills/bootstrap-templates/dps-README.template.md    docs/superskills/DPS_v5/README.md
-cp -n ~/.claude/skills/bootstrap-templates/dps-CONTRACTS.template.md docs/superskills/DPS_v5/CONTRACTS.md
-cp -n ~/.claude/skills/bootstrap-templates/dps-BLUEPRINT.template.md docs/superskills/DPS_v5/BLUEPRINT.md
-cp -n ~/.claude/skills/bootstrap-templates/dps-ADR.template.md       docs/superskills/DPS_v5/ADR.md
-cp -n ~/.claude/skills/dps-tools/dps.py           docs/superskills/DPS_v5/tools/dps.py
+cp -n ~/.claude/skills/bootstrap-templates/dps-README.template.md    .dps/spec/README.md
+cp -n ~/.claude/skills/bootstrap-templates/dps-CONTRACTS.template.md .dps/spec/CONTRACTS.md
+cp -n ~/.claude/skills/bootstrap-templates/dps-BLUEPRINT.template.md .dps/spec/BLUEPRINT.md
+cp -n ~/.claude/skills/bootstrap-templates/dps-ADR.template.md       .dps/spec/ADR.md
+cp -n ~/.claude/skills/dps-tools/dps.py           .dps/tools/dps.py
 
 echo "DPS scaffold created. Run dps-init after brainstorming to populate."
 ```
@@ -180,8 +180,8 @@ cat > docs/superskills/CONSTITUTION.md << 'EOF'
 ## DPS Profile
 <!-- DPS-Lite | DPS-Standard | DPS-Critical -->
 Profile: {{PROFILE}}
-DPS Location: docs/superskills/DPS_v5/
-DPS Tooling: docs/superskills/DPS_v5/tools/dps.py
+DPS Location: .dps/
+DPS Tooling: .dps/tools/dps.py
 
 ## Architecture Laws
 # Format: - [LAW]: [rationale]

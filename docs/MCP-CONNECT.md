@@ -59,7 +59,7 @@ Script sẽ build và in sẵn cấu hình JSON cho từng IDE với đường d
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",
         "MCP_SAFE_MODE": "false",
-        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
         "MCP_PLUGIN_ISOLATION_MODE": "policy",
         "MCP_ENABLE_SKILL_RESOURCES": "true",
         "MCP_PROJECT_ID": "dps-superskills",
@@ -91,7 +91,7 @@ Thêm vào `.claude/settings.json` trong project, hoặc `~/.claude/settings.jso
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",
         "MCP_SAFE_MODE": "false",
-        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
         "MCP_PLUGIN_ISOLATION_MODE": "policy",
         "MCP_ENABLE_SKILL_RESOURCES": "true",
         "MCP_PROJECT_ID": "dps-superskills",
@@ -119,7 +119,7 @@ Sau đó trong Claude Code: `/mcp` để kiểm tra connection.
       "TRANSPORT_DRIVER": "stdio",
       "STORAGE_DRIVER": "fs",
       "MCP_SAFE_MODE": "false",
-      "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+      "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
       "MCP_PLUGIN_ISOLATION_MODE": "policy",
       "MCP_ENABLE_SKILL_RESOURCES": "true",
       "MCP_PROJECT_ID": "dps-superskills",
@@ -148,7 +148,7 @@ Thêm vào `.vscode/mcp.json` hoặc User Settings (`settings.json`):
           "TRANSPORT_DRIVER": "stdio",
           "STORAGE_DRIVER": "fs",
           "MCP_SAFE_MODE": "false",
-          "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+          "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
           "MCP_PLUGIN_ISOLATION_MODE": "policy",
           "MCP_ENABLE_SKILL_RESOURCES": "true",
           "MCP_PROJECT_ID": "dps-superskills",
@@ -176,7 +176,7 @@ Thêm vào `~/.codeium/windsurf/mcp_config.json`:
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",
         "MCP_SAFE_MODE": "false",
-        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
         "MCP_PLUGIN_ISOLATION_MODE": "policy",
         "MCP_ENABLE_SKILL_RESOURCES": "true",
         "MCP_PROJECT_ID": "dps-superskills",
@@ -203,7 +203,7 @@ Dùng config format `mcpServers` chuẩn. Ví dụ cho AntiGravity (`~/.antigrav
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",
         "MCP_SAFE_MODE": "false",
-        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js",
+        "MCP_PLUGIN_ALLOWLIST": "system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js",
         "MCP_PLUGIN_ISOLATION_MODE": "policy",
         "MCP_ENABLE_SKILL_RESOURCES": "true",
         "MCP_PROJECT_ID": "dps-superskills",
@@ -229,7 +229,7 @@ MCP_AUTH_MODE=api_key
 MCP_API_KEY=<random string ≥ 32 chars>
 ALLOWED_ORIGINS=http://localhost:3000
 ALLOWED_HOSTS=localhost,127.0.0.1
-MCP_PLUGIN_ALLOWLIST=system.tool.js,skills.tool.js,knowledge.tool.js
+MCP_PLUGIN_ALLOWLIST=system.tool.js,skills.tool.js,knowledge.tool.js,code_index.tool.js,dps.tool.js
 MCP_PLUGIN_ISOLATION_MODE=policy
 MCP_SAFE_MODE=false
 MCP_ENABLE_SKILL_RESOURCES=true

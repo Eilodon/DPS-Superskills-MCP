@@ -22,7 +22,7 @@ The difference is compounding vs. archiving.
 
 ```bash
 # Detect mode: DPS or legacy?
-DPS_ADR="docs/superskills/DPS_v5/ADR.md"
+DPS_ADR=".dps/spec/ADR.md"
 if [ -f "$DPS_ADR" ]; then
   echo "DPS MODE — reading ADR from $DPS_ADR"
   grep -c "Cycle Retrospective" "$DPS_ADR" | xargs echo "DPS ADR Part 10 entries:"
@@ -93,7 +93,7 @@ Criteria: "Would future brainstorming on a *different* feature benefit from know
 *Run if DPS present and STATUS ≥ IMPLEMENTATION-ACTIVE*
 
 ```bash
-DPS_STATUS=$(grep "DPS STATUS:" docs/superskills/DPS_v5/README.md 2>/dev/null | awk '{print $NF}')
+DPS_STATUS=$(grep "DPS STATUS:" .dps/spec/README.md 2>/dev/null | awk '{print $NF}')
 [ "$DPS_STATUS" = "IMPLEMENTATION-ACTIVE" ] || [ "$DPS_STATUS" = "LIVING-SPEC" ] && echo "Arc 2 update needed"
 ```
 

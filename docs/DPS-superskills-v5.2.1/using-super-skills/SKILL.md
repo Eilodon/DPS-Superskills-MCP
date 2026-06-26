@@ -34,6 +34,10 @@ for per-harness capability matrix and fallback instructions.
 - No TodoWrite → maintain `- [ ]` checklist inline
 - No Artifacts API → use Method B (local subagent) in `specialist-review` [E.IJ]
 
+**Code retrieval & DPS spec (MCP tools, when this server is connected):**
+- Before grepping/reading files to locate code, prefer **`code_search`** — native local semantic search over the project, returns `path:line` + match-centred previews at a fraction of the token cost. `code_index_status` / `code_index` manage its cache (`<workspace>/.dps/index/`).
+- To adopt DPS living-spec for a project, use **`dps_init`** (scaffolds `<workspace>/.dps/spec/`, asks consent); validate with **`dps_check`**. Once filled, `code_search` fuses spec files (`source=spec`) into results.
+
 
 ## Token Budget Management
 

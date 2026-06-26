@@ -89,10 +89,20 @@ const EnvSchema = z.object({
   MCP_TENANT_ID: z.string().default("tenant_local"),
   MCP_TRUST_IDENTITY_HEADERS: EnvBoolean(false),
 
+  // Data-plane local indexer: filesystem root of the user's project to index.
+  // Empty => resolved at runtime to process.cwd() under stdio transport; under
+  // HTTP the indexer disables itself (the indexer is a local data-plane feature,
+  // the remote server is the control plane).
+  MCP_WORKSPACE_ROOT: z.string().default(""),
+  // Consent knob: when false, code_search will NOT silently auto-build the local
+  // index on first use — the user must call code_index explicitly. The index is
+  // confined to <workspace>/.dps/index/ (gitignored) regardless.
+  MCP_INDEX_AUTO: EnvBoolean(true),
+
   MCP_PLUGIN_ALLOWLIST: z
     .string()
     .default(
-      "system.tool.js,system.tool.ts,skills.tool.js,skills.tool.ts,knowledge.tool.js,knowledge.tool.ts",
+      "system.tool.js,system.tool.ts,skills.tool.js,skills.tool.ts,knowledge.tool.js,knowledge.tool.ts,code_index.tool.js,code_index.tool.ts,dps.tool.js,dps.tool.ts",
     ),
   MCP_PLUGIN_AUTO_DISCOVERY: EnvBoolean(false),
   MCP_ALLOW_UNSAFE_PLUGIN_AUTO_DISCOVERY: EnvBoolean(false),
@@ -180,6 +190,10 @@ export const BUILT_IN_PLUGIN_NAMES = new Set([
   "skills.tool.js",
   "knowledge.tool.ts",
   "knowledge.tool.js",
+  "code_index.tool.ts",
+  "code_index.tool.js",
+  "dps.tool.ts",
+  "dps.tool.js",
 ]);
 
 function hasNonBuiltInPluginConfig(allowlist: string, autoDiscovery: boolean): boolean {
@@ -222,6 +236,8 @@ function loadEnv() {
     MCP_PROJECT_ID: process.env.MCP_PROJECT_ID,
     MCP_TENANT_ID: process.env.MCP_TENANT_ID,
     MCP_TRUST_IDENTITY_HEADERS: process.env.MCP_TRUST_IDENTITY_HEADERS,
+    MCP_WORKSPACE_ROOT: process.env.MCP_WORKSPACE_ROOT,
+    MCP_INDEX_AUTO: process.env.MCP_INDEX_AUTO,
     MCP_PLUGIN_ALLOWLIST: process.env.MCP_PLUGIN_ALLOWLIST,
     MCP_PLUGIN_AUTO_DISCOVERY: process.env.MCP_PLUGIN_AUTO_DISCOVERY,
     MCP_ALLOW_UNSAFE_PLUGIN_AUTO_DISCOVERY: process.env.MCP_ALLOW_UNSAFE_PLUGIN_AUTO_DISCOVERY,
