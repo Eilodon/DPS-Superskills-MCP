@@ -19,7 +19,7 @@ This server exposes both **MCP Tools** (for on-demand invocation) and **MCP Reso
 All 31 skills are exposed as read-only MCP Resources at `skill://<name>` (for example, `skill://using-super-skills` or `skill://complexity-gate`). Resource annotations prioritize DISCIPLINE skills so clients that support resource ranking can inject the Iron Laws first.
 Compatible MCP clients can discover the `skill://{skill_name}` template, call `resources/list`, and read individual skills with `resources/read`. When resources are enabled, the server advertises standard MCP `resources` capability during `initialize`.
 
-*Note: Resources are fully protected by the same rate-limiting, quota, and Output Firewall pipelines as Tools. Enabled by default; can be disabled via `MCP_ENABLE_SKILL_RESOURCES=false`.*
+*Note: Resources inherit the SUPER-MCP governance pipeline scaled by endpoint: `resources/read` enforces rate-limiting, quota, and Output Firewall (like Tools); `resources/list` enforces rate-limiting and quota; `resources/templates/list` is lightweight discovery. Enabled by default; can be disabled via `MCP_ENABLE_SKILL_RESOURCES=false`.*
 
 ### MCP Tools
 
