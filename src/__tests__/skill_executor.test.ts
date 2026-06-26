@@ -8,7 +8,10 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { formatSkillResponse, formatSkillList } from "../skills/skill_executor.js";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+import { clearProjectContextCache, formatSkillResponse, formatSkillList, loadProjectContext } from "../skills/skill_executor.js";
 import type { ParsedSkill } from "../skills/skill_loader.js";
 
 function baseSkill(overrides: Partial<ParsedSkill> = {}): ParsedSkill {
@@ -230,5 +233,34 @@ describe("formatSkillList", () => {
     expect(text).toContain("[TECHNIQUE]");
     expect(text).toContain("brainstorming");
     expect(text).toContain("Total: 2 skills");
+  });
+});
+
+describe("loadProjectContext", () => {
+  it("reads knowledge hints from MCP_KB_PATH when provided", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "dps-skill-context-"));
+    process.env.MCP_KB_PATH = dir;
+    clearProjectContextCache();
+
+    try {
+      await fs.writeFile(
+        path.join(dir, "gotcha.md"),
+        [
+          "# Knowledge Base — gotcha",
+          "",
+          "### KB-GOTCHA-temp-context",
+          "- **content:** Temp KB context is injected.",
+          "",
+        ].join("\n"),
+        "utf-8",
+      );
+
+      const ctx = await loadProjectContext();
+      expect(ctx.knowledgeGotchas).toContain("KB-GOTCHA-temp-context: Temp KB context is injected.");
+    } finally {
+      delete process.env.MCP_KB_PATH;
+      clearProjectContextCache();
+      await fs.rm(dir, { recursive: true, force: true });
+    }
   });
 });

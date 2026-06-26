@@ -1,7 +1,7 @@
 /**
  * skill_resources.ts — MCP Resources endpoint for DPS SuperSkills.
  *
- * Exposes DISCIPLINE skills (and optionally all skills) as MCP Resources so
+ * Exposes all registered skills as MCP Resources so
  * clients can auto-inject them into the LLM context window without requiring
  * the model to call a Tool first.
  *
@@ -134,6 +134,12 @@ export function registerSkillResources(server: McpServer): void {
   if (!ENV.MCP_ENABLE_SKILL_RESOURCES) {
     return;
   }
+
+  server.server.registerCapabilities({
+    resources: {
+      listChanged: server.server.getCapabilities().resources?.listChanged ?? false,
+    },
+  });
 
   const basePath = skillsBasePath();
 

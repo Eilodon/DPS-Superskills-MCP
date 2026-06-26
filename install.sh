@@ -41,7 +41,7 @@ fi
 echo "Build OK: $DIST"
 echo ""
 
-# Shared env vars (MCP_SAFE_MODE=false needed for kb_write/kb_update)
+# Shared env vars (MCP_SAFE_MODE=false enables dps_check, which spawns python3)
 read -r -d '' ENV_STDIO <<ENVEOF || true
         "TRANSPORT_DRIVER": "stdio",
         "STORAGE_DRIVER": "fs",

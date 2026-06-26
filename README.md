@@ -1,6 +1,6 @@
 # DPS SuperSkills MCP Server
 
-**DPS SuperSkills v5.2.1** deployed as an MCP server — exposes 31 high-assurance agentic coding skills as tools for any MCP-compatible client (Claude Desktop, Cursor, VS Code, Windsurf, Antigravity, or any IDE/chatbot supporting MCP).
+**DPS SuperSkills v5.2.1** deployed as an MCP server — exposes 16 MCP tools plus 31 read-only skill resources for any MCP-compatible client (Claude Desktop, Cursor, VS Code, Windsurf, Antigravity, or any IDE/chatbot supporting MCP).
 
 > Package: `dps-superskills-mcp`
 > Default transport: `stdio`
@@ -16,8 +16,8 @@ This server exposes both **MCP Tools** (for on-demand invocation) and **MCP Reso
 
 ### MCP Resources
 
-DISCIPLINE skills (the Iron Laws) are automatically exposed as read-only MCP Resources at `skill://<name>` (e.g., `skill://using-super-skills`). 
-Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject these high-priority resources into the LLM's system context at the start of a session, enforcing the rules without requiring the model to explicitly call a tool first.
+All 31 skills are exposed as read-only MCP Resources at `skill://<name>` (for example, `skill://using-super-skills` or `skill://complexity-gate`). Resource annotations prioritize DISCIPLINE skills so clients that support resource ranking can inject the Iron Laws first.
+Compatible MCP clients can discover the `skill://{skill_name}` template, call `resources/list`, and read individual skills with `resources/read`. When resources are enabled, the server advertises standard MCP `resources` capability during `initialize`.
 
 *Note: Resources are fully protected by the same rate-limiting, quota, and Output Firewall pipelines as Tools. Enabled by default; can be disabled via `MCP_ENABLE_SKILL_RESOURCES=false`.*
 
@@ -37,7 +37,7 @@ Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject
 
 | MCP Tool | Purpose |
 |---|---|
-| `kb_write` | Record a single knowledge entry (`gotcha` / `pattern-debt` / `domain-term` / `decision` / `bug-pattern`) to `docs/superskills/<category>.md`. Slug is validated as kebab-case. Active gotchas auto-inject into future `skill_run` responses. |
+| `kb_write` | Record a single knowledge entry (`gotcha` / `pattern-debt` / `domain-term` / `decision` / `bug-pattern`) to `docs/superskills/<category>.md` by default, or `MCP_KB_PATH/<category>.md` when overridden. Slug is validated as kebab-case. Active gotchas auto-inject into future `skill_run` responses. |
 | `kb_update` | Update an existing KB entry in-place by slug. Use when a gotcha or decision is no longer accurate and needs replacing. |
 | `kb_query` | Search the KB. Default returns a compact `id + 1-line summary` per match (token-efficient); pass `detail=true` for full entry bodies. Supports `category` filter and `limit`. |
 | `kb_health` | Report entry counts per category, flag stale entries (>90 days), and surface coverage gaps. |
@@ -95,7 +95,7 @@ Compatible MCP clients (like Claude Desktop and Cursor) can automatically inject
 
 Replace `<absolute-path-to>` with your actual full path, or run `./install.sh` to get it pre-filled.
 
-> **`MCP_SAFE_MODE=false` is required** for `dps_check` (it spawns `python3` — `process.spawn` is blocked in safe mode). Everything else runs under safe mode: `kb_write` / `kb_update` use the local `kb.write` capability, and `code_search` / `code_index` / `dps_init` only write into the gitignored `<workspace>/.dps/` (`fs.write.workspace`). In local `stdio` mode safe mode is the recommended default; set it `false` only when you need `dps_check`.
+> **`MCP_SAFE_MODE=false` is required** for `dps_check` (it spawns `python3` — `process.spawn` is blocked in safe mode). Everything else runs under safe mode: `kb_write` / `kb_update` use the local `kb.write` capability, and `code_search` / `code_index` / `dps_init` only write into the workspace (`fs.write.workspace`). Use `false` when you want the full tool set including `dps_check`; use `true` for the smallest local permission profile when you do not need DPS linting.
 >
 > **`MCP_WORKSPACE_ROOT`** — the code retrieval + DPS tools operate on the user's project. Under `stdio` they default to the server's working directory (`process.cwd()`); if your IDE does not launch the server with the project as cwd, set `MCP_WORKSPACE_ROOT` to the absolute project path. Under `http` (remote/control-plane) the indexer disables itself.
 
@@ -227,6 +227,12 @@ By default the server reads skills from `<project_root>/docs/DPS-superskills-v5.
 
 ```env
 MCP_SKILLS_PATH=/custom/path/to/skills
+```
+
+The persistent knowledge base defaults to `<project_root>/docs/superskills`. Override it when you want project-local or test-isolated KB files:
+
+```env
+MCP_KB_PATH=/abs/path/to/docs/superskills
 ```
 
 Code-retrieval / DPS tools:

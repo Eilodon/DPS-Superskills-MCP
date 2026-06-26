@@ -3,18 +3,20 @@
  * kb_query summary/detail modes.
  */
 
-import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { z } from "zod/v4";
 import knowledgeTools from "../plugins/knowledge.tool.js";
-import { skillsBasePath } from "../skills/skill_loader.js";
 
 const kbWrite = knowledgeTools.find(t => t.name === "kb_write")!;
 const kbQuery = knowledgeTools.find(t => t.name === "kb_query")!;
 
+let testKbDir: string;
+
 function kbDir(): string {
-  return path.resolve(skillsBasePath(), "..", "..", "docs", "superskills");
+  return testKbDir;
 }
 
 const writtenSlugs = new Set<string>();
@@ -29,27 +31,14 @@ async function runHandler(tool: typeof kbWrite, args: Record<string, unknown>) {
   return tool.handler(parsed, {} as never);
 }
 
+beforeAll(async () => {
+  testKbDir = await fs.mkdtemp(path.join(os.tmpdir(), "dps-kb-test-"));
+  process.env.MCP_KB_PATH = testKbDir;
+});
+
 afterAll(async () => {
-  // Remove only the entries this test created; leave any real KB content intact.
-  const file = path.join(kbDir(), "gotcha.md");
-  let content: string;
-  try {
-    content = await fs.readFile(file, "utf-8");
-  } catch {
-    return;
-  }
-  const entries = content.split(/(?=^### KB-)/m);
-  const kept = entries.filter(entry => {
-    if (!entry.startsWith("### KB-")) return true;
-    return !Array.from(writtenSlugs).some(slug => entry.includes(`KB-GOTCHA-${slug}`));
-  });
-  const next = kept.join("");
-  // If only the header remains and the file was created by these tests, delete it.
-  if (kept.length === 1 && kept[0].trim().startsWith("# Knowledge Base")) {
-    await fs.rm(file, { force: true });
-  } else {
-    await fs.writeFile(file, next, "utf-8");
-  }
+  delete process.env.MCP_KB_PATH;
+  await fs.rm(testKbDir, { recursive: true, force: true });
 });
 
 describe("kb_write slug sanitization", () => {
@@ -83,10 +72,6 @@ describe("kb_write slug sanitization", () => {
 
 describe("kb_query tiered retrieval", () => {
   const testSlug = `test-entry-${Date.now()}`;
-
-  beforeEach(async () => {
-    await fs.mkdir(kbDir(), { recursive: true });
-  });
 
   it("returns summary mode by default and detail mode when requested", async () => {
     await runHandler(kbWrite, {

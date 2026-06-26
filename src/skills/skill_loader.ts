@@ -313,14 +313,14 @@ export class SkillLoader {
     if (cached !== undefined) return cached;
     const base = skillsBasePath();
     const nanoFile = path.join(base, skillName, `${skillName}.nano.md`);
-    let content = "";
     try {
-      content = await fs.readFile(nanoFile, "utf-8");
+      const content = await fs.readFile(nanoFile, "utf-8");
+      cacheSet(nanoCache, skillName, content);
+      return content;
     } catch {
-      content = "";
+      cacheSet(nanoCache, skillName, "");
+      return "";
     }
-    cacheSet(nanoCache, skillName, content);
-    return content;
   }
 
   /**
